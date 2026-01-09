@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Konfirmasi Registrasi - Buka Puasa Bersama 1447 H</title>
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Konfirmasi Registrasi - Buka Puasa Bersama 1447 H">
+    <meta property="og:description" content="Simpan kartu akses Anda untuk hadir di acara Buka Puasa Bersama 1447 H">
+    <meta property="og:image" content="https://example.com/iftar-card.jpg">
+    <meta property="og:url" content="">
+    <meta property="og:type" content="website">
+
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- External Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Local Styles and Scripts -->
+    <link rel="stylesheet" href="css/direct.css">
+    <script src="js/direct.js" defer></script>
+</head>
+<body>
+
+<div class="ornament-top"></div>
+<div class="ornament-bottom"></div>
+<div class="islamic-pattern"></div>
+
+<!-- Language Selector -->
+<div class="language-selector">
+    <button id="langBtn" class="lang-btn">
+        <i class="fas fa-globe"></i>
+        <span id="currentLang">ID</span>
+    </button>
+</div>
+
+<main>
+    <div class="container">
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="errorText" data-i18n="errorMessage">Gagal memuat data dari server. Silakan coba lagi.</span>
+        </div>
+        
+        <div class="brand-header">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1 data-i18n="title">Pendaftaran Berhasil!</h1>
+            <p data-i18n="subtitle">Data Anda telah berhasil tersimpan dalam sistem registrasi.</p>
+            
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <span data-i18n="successMessage">Simpan kartu akses di bawah ini untuk ditunjukkan saat acara.</span>
+            </div>
+        </div>
+
+        <!-- Registration Card -->
+        <div class="card" id="registrationCard">
+            <div class="event-header">
+                <h2 data-i18n="eventTitle">Buka Puasa Bersama 1447 H</h2>
+                <p data-i18n="organization">Masjid Central Okayama</p>
+            </div>
+
+            <div class="qr-container">
+                <div id="qrcode"></div>
+                <span class="reg-id" id="displayId">Memuat...</span>
+                <div class="hint" style="margin-top: 10px; color: #64748b; font-size: 0.8rem;">
+                    <i class="fas fa-info-circle"></i> <span data-i18n="qrHint">Scan QR Code ini saat check-in</span>
+                </div>
+            </div>
+
+            <div id="details">
+                <div class="data-row">
+                    <span class="data-label" data-i18n="fullName">Nama Lengkap</span>
+                    <span class="data-value" id="displayName">Memuat...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" data-i18n="email">Email</span>
+                    <span class="data-value" id="displayEmail">Memuat...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" data-i18n="phone">Nomor Telepon</span>
+                    <span class="data-value" id="displayPhone">Memuat...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" data-i18n="domisili">Domisili</span>
+                    <span class="data-value" id="displayDomisili">Memuat...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" data-i18n="totalAttendees">Total Kehadiran</span>
+                    <span class="data-value" id="displayQty">Memuat...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" data-i18n="eventDate">Tanggal Acara</span>
+                    <span class="data-value" data-i18n="dateValue">Sabtu, 14 Maret 2026</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" data-i18n="eventTime">Waktu</span>
+                    <span class="data-value" data-i18n="timeValue">17.30 - 20.00 WIB</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" data-i18n="location">Lokasi</span>
+                    <span class="data-value" data-i18n="locationValue">Masjid Central Okayama</span>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <span data-i18n="instruction">Harap tunjukkan QR Code ini kepada petugas saat kedatangan. Kartu ini berlaku untuk semua peserta yang terdaftar.</span>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button id="downloadBtn" class="btn btn-primary" disabled>
+                <i class="fas fa-download"></i>
+                <span data-i18n="downloadBtn">Simpan Kartu</span>
+            </button>
+            <button id="shareBtn" class="btn btn-secondary" disabled>
+                <i class="fas fa-share-alt"></i>
+                <span data-i18n="shareBtn">Bagikan</span>
+            </button>
+            <a href="index.html" class="btn btn-secondary">
+                <i class="fas fa-home"></i>
+                <span data-i18n="homeBtn">Beranda</span>
+            </a>
+            <!-- Admin Link (visible only if admin parameter is present) -->
+            <a href="admin.html" id="adminLink" class="btn btn-secondary" style="display: none;">
+                <i class="fas fa-user-cog"></i>
+                <span data-i18n="adminBtn">Admin</span>
+            </a>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="additional-info">
+            <div class="info-card">
+                <i class="fas fa-map-marker-alt"></i>
+                <div>
+                    <h4 data-i18n="locationTitle">Lokasi Acara</h4>
+                    <p data-i18n="locationDetail">Masjid Central Okayama<br>Okayama-shi, Kita-ku, Chuocho 3-19, Jepang</p>
+                </div>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-phone"></i>
+                <div>
+                    <h4 data-i18n="contactTitle">Kontak Panitia</h4>
+                    <p data-i18n="contactDetail">Email: ibadurrahmanislamiccenter@gmail.com<br>Telepon: 070-5671-0616</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-text">
+            <div data-i18n="copyright">© 2026 Masjid Central Okayama</div>
+            <div class="contact-info">
+                <span data-i18n="contactInfo">Untuk informasi lebih lanjut:</span>
+                <a href="mailto:ibadurrahmanislamiccenter@gmail.com" id="contactEmail">
+                    ibadurrahmanislamiccenter@gmail.com
+                </a>
+            </div>
+            <div class="prayer-message">
+                <i class="fas fa-star-and-crescent"></i>
+                <span data-i18n="prayerMessage">Semoga Allah menerima amal ibadah kita di bulan Ramadan yang mulia ini</span>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

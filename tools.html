@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard - Buka Puasa Bersama 1447 H</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tools.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+<script src="js/tools.js" defer></script>
+</head>
+<body>
+
+<div class="ornament-top"></div>
+<div class="ornament-bottom"></div>
+<div class="islamic-pattern"></div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p id="loadingText">Memuat sistem...</p>
+</div>
+
+<!-- Login Container -->
+<div class="login-container" id="loginContainer">
+  <div class="login-box">
+    <div class="login-icon">
+      <i class="fas fa-lock" aria-hidden="true"></i>
+    </div>
+    <h1 class="login-title">Admin Dashboard</h1>
+    <p class="login-subtitle">Akses terbatas untuk panitia dan pengelola acara</p>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username" id="usernameLabel">
+          <i class="fas fa-user" aria-hidden="true"></i> Username
+        </label>
+        <input type="text" id="username" class="form-control" 
+               placeholder="Masukkan username" 
+               aria-labelledby="usernameLabel"
+               aria-required="true"
+               required>
+      </div>
+      
+      <div class="form-group">
+        <label for="password" id="passwordLabel">
+          <i class="fas fa-lock" aria-hidden="true"></i> Password
+        </label>
+        <input type="password" id="password" class="form-control" 
+               placeholder="Masukkan password" 
+               aria-labelledby="passwordLabel"
+               aria-required="true"
+               required>
+      </div>
+      
+      <button type="submit" class="btn-login" id="loginBtn">
+        <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Masuk ke Dashboard
+      </button>
+      
+      <div class="error-message" id="loginError" style="display: none;">
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i> Username atau password salah
+      </div>
+    </form>
+    
+    <div class="login-footer">
+      <p><i class="fas fa-info-circle" aria-hidden="true"></i> Hubungi administrator jika lupa password</p>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Container -->
+<div class="dashboard-container" id="dashboardContainer">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1><i class="fas fa-mosque" aria-hidden="true"></i> Dashboard Admin Buka Puasa Bersama</h1>
+      <p class="subtitle">Sistem monitoring kehadiran jamaah real-time</p>
+    </div>
+    <div class="header-right">
+      <div class="user-info">
+        <span class="user-role" id="userRole">Admin</span>
+        <button class="btn-logout" id="logoutBtn" aria-label="Logout dari sistem">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+        </button>
+      </div>
+      <div class="last-update" id="lastUpdate">
+        <i class="fas fa-sync-alt" aria-hidden="true"></i> Terakhir update: <span id="updateTime">-</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stats Cards -->
+  <div class="stats-container">
+    <div class="stat-card">
+      <div class="stat-icon total">
+        <i class="fas fa-users" aria-hidden="true"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value" data-stat="totalRegistered">0</h3>
+        <p>Total Pendaftar</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon present">
+        <i class="fas fa-user-check" aria-hidden="true"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value" data-stat="totalPresent">0</h3>
+        <p>Sudah Hadir</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon waiting">
+        <i class="fas fa-user-clock" aria-hidden="true"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value" data-stat="totalWaiting">0</h3>
+        <p>Belum Hadir</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon total-people">
+        <i class="fas fa-user-friends" aria-hidden="true"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value" data-stat="totalPeople">0</h3>
+        <p>Total Jamaah</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="scanner" aria-label="Tab scanner QR code">
+      <i class="fas fa-qrcode" aria-hidden="true"></i> QR Scanner
+    </button>
+    <button class="tab" data-tab="participants" aria-label="Tab daftar jamaah">
+      <i class="fas fa-list" aria-hidden="true"></i> Daftar Jamaah
+    </button>
+    <button class="tab" data-tab="analytics" aria-label="Tab analisis data">
+      <i class="fas fa-chart-bar" aria-hidden="true"></i> Analisis
+    </button>
+    <button class="tab" data-tab="settings" aria-label="Tab pengaturan sistem">
+      <i class="fas fa-cog" aria-hidden="true"></i> Pengaturan
+    </button>
+  </div>
+  
+  <!-- Tab Contents -->
+  <div class="tab-contents">
+    <!-- Scanner Tab -->
+    <div class="tab-content active" id="scannerTab">
+      <div class="scanner-section">
+        <h2><i class="fas fa-qrcode" aria-hidden="true"></i> QR Code Scanner</h2>
+        <p class="subtitle">Arahkan kamera ke QR Code pada kartu akses jamaah</p>
+        
+        <div class="scanner-box">
+          <div id="videoContainer">
+            <video id="video" width="400" height="300" playsinline></video>
+            <div class="scanner-overlay"></div>
+          </div>
+          
+          <div class="scanner-controls">
+            <button id="startScanner" class="btn-primary" aria-label="Mulai scan QR code">
+              <i class="fas fa-play" aria-hidden="true"></i> Mulai Scan
+            </button>
+            <button id="stopScanner" class="btn-secondary" disabled aria-label="Stop scan QR code">
+              <i class="fas fa-stop" aria-hidden="true"></i> Stop Scan
+            </button>
+            <button id="manualCheckin" class="btn-tertiary" aria-label="Check-in manual tanpa QR code">
+              <i class="fas fa-keyboard" aria-hidden="true"></i> Check-in Manual
+            </button>
+          </div>
+        </div>
+        
+        <div class="scan-result" id="scanResult">
+          <h3><i class="fas fa-check-circle" aria-hidden="true"></i> Hasil Scan</h3>
+          <div id="scanResultContent"></div>
+          <div class="scan-actions">
+            <button id="confirmCheckin" class="btn-success" aria-label="Konfirmasi check-in peserta">
+              <i class="fas fa-user-check" aria-hidden="true"></i> Konfirmasi Check-in
+            </button>
+            <button id="cancelCheckin" class="btn-danger" aria-label="Batalkan check-in">
+              <i class="fas fa-times" aria-hidden="true"></i> Batal
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Participants Tab -->
+    <div class="tab-content" id="participantsTab">
+      <div class="participants-section">
+        <div class="section-header">
+          <h2><i class="fas fa-users" aria-hidden="true"></i> Daftar Jamaah Terdaftar</h2>
+          <div class="header-actions">
+            <div class="search-box">
+              <i class="fas fa-search" aria-hidden="true"></i>
+              <input type="text" id="searchInput" placeholder="Cari nama atau ID..." aria-label="Cari jamaah">
+            </div>
+            <button id="refreshBtn" class="btn-refresh" aria-label="Refresh data jamaah">
+              <i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh
+            </button>
+            <button id="exportBtn" class="btn-export" aria-label="Export data ke CSV">
+              <i class="fas fa-download" aria-hidden="true"></i> Export
+            </button>
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Registrasi</th>
+                <th>Nama Lengkap</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Waktu Check-in</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="participantsTableBody">
+              <!-- Data akan diisi oleh JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="table-footer">
+          <div class="pagination">
+            <button id="prevPage" disabled aria-label="Halaman sebelumnya"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+            <span id="pageInfo">Halaman 1 dari 1</span>
+            <button id="nextPage" disabled aria-label="Halaman berikutnya"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+          </div>
+          <div class="total-info">
+            Total: <span id="tableTotal">0</span> pendaftar
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Analytics Tab -->
+    <div class="tab-content" id="analyticsTab">
+      <div class="analytics-section">
+        <h2><i class="fas fa-chart-bar" aria-hidden="true"></i> Analisis Kehadiran</h2>
+        
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3><i class="fas fa-chart-pie" aria-hidden="true"></i> Status Kehadiran</h3>
+            <canvas id="attendanceChart" aria-label="Diagram status kehadiran jamaah"></canvas>
+          </div>
+          
+          <div class="chart-card">
+            <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Timeline Pendaftaran</h3>
+            <canvas id="registrationChart" aria-label="Grafik timeline pendaftaran jamaah"></canvas>
+          </div>
+          
+          <div class="chart-card">
+            <h3><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Distribusi Domisili</h3>
+            <canvas id="locationChart" aria-label="Diagram distribusi domisili jamaah"></canvas>
+          </div>
+          
+          <div class="chart-card">
+            <h3><i class="fas fa-venus-mars" aria-hidden="true"></i> Rasio Gender</h3>
+            <canvas id="genderChart" aria-label="Diagram rasio gender jamaah"></canvas>
+          </div>
+        </div>
+        
+        <div class="analytics-summary">
+          <h3><i class="fas fa-info-circle" aria-hidden="true"></i> Ringkasan Statistik</h3>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="label">Rata-rata Usia</span>
+              <span class="value" id="avgAge">0</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Domisili Terbanyak</span>
+              <span class="value" id="topLocation">-</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Check-in Terakhir</span>
+              <span class="value" id="lastCheckin">-</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Pendaftar Hari Ini</span>
+              <span class="value" id="todayReg">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Settings Tab -->
+    <div class="tab-content" id="settingsTab">
+      <div class="settings-section">
+        <h2><i class="fas fa-cog" aria-hidden="true"></i> Pengaturan Sistem</h2>
+        
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3><i class="fas fa-user-shield" aria-hidden="true"></i> Keamanan</h3>
+            <div class="setting-item">
+              <label>Ganti Password Admin</label>
+              <input type="password" id="newPassword" placeholder="Password baru" aria-label="Input password baru">
+              <button class="btn-small" id="savePasswordBtn" aria-label="Simpan password baru">Simpan</button>
+            </div>
+          </div>
+          
+          <div class="settings-card">
+            <h3><i class="fas fa-bell" aria-hidden="true"></i> Notifikasi</h3>
+            <div class="setting-item">
+              <label>Email Notifikasi</label>
+              <input type="email" id="notificationEmail" placeholder="email@contoh.com" aria-label="Input email notifikasi">
+              <button class="btn-small" id="saveEmailBtn" aria-label="Simpan email notifikasi">Simpan</button>
+            </div>
+          </div>
+          
+          <div class="settings-card">
+            <h3><i class="fas fa-database" aria-hidden="true"></i> Data</h3>
+            <div class="setting-item">
+              <label>Backup Data</label>
+              <button class="btn-small" id="backupBtn" aria-label="Backup data ke Excel">
+                <i class="fas fa-download" aria-hidden="true"></i> Backup ke Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <footer class="dashboard-footer">
+    <div class="footer-content">
+      <p>© 2026 Masjid Central Okayama • Sistem Pendataan Buka Puasa Bersama</p>
+      <p class="prayer-message">
+        <i class="fas fa-star-and-crescent" aria-hidden="true"></i>
+        Semoga Allah memberkahi setiap amal kebaikan kita
+      </p>
+      <div class="system-info">
+        <span id="systemStatus"><i class="fas fa-circle" style="color: #10a37f;"></i> Sistem Online</span>
+        •
+        <span id="dataCount">0 data tersimpan</span>
+        •
+        <span id="serverTime">-</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>
