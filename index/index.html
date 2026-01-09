@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registrasi Buka Puasa Bersama 1447 H</title>
+
+<!-- Open Graph Tags -->
+<meta property="og:title" content="Registrasi Buka Puasa Bersama 1447 H">
+<meta property="og:description" content="Daftar untuk menghadiri buka puasa bersama di Masjid Central Okayama">
+<meta property="og:image" content="https://username.github.io/repo/iftar-og.jpg">
+<meta property="og:url" content="https://username.github.io/repo/">
+
+<!-- Fonts -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- CSS External -->
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<!-- Decorative Background Elements -->
+<div class="ornament-top" aria-hidden="true"></div>
+<div class="ornament-bottom" aria-hidden="true"></div>
+<div class="islamic-pattern" aria-hidden="true"></div>
+
+<!-- Language Selector -->
+<div class="language-selector">
+  <select id="languageSelector" aria-label="Pilih bahasa">
+    <option value="id">🇮🇩 Indonesia</option>
+    <option value="en">🇬🇧 English</option>
+    <option value="ja">🇯🇵 日本語</option>
+  </select>
+</div>
+
+<main>
+  <div class="container">
+    <!-- Alert Messages -->
+    <div class="duplicate-alert" id="duplicateAlert" role="alert" aria-live="assertive">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span id="duplicateAlertText">Data ini sudah terdaftar</span>
+    </div>
+
+    <div class="info-message" id="infoMessage" role="status" aria-live="polite">
+      <i class="fas fa-info-circle"></i>
+      <span id="infoMessageText">Setelah submit, Anda akan diarahkan ke halaman konfirmasi</span>
+    </div>
+
+    <div class="alert-message" id="alertMessage" role="alert" aria-live="assertive">
+      <i class="fas fa-exclamation-circle"></i>
+      <span id="alertMessageText"></span>
+    </div>
+
+    <div class="success-message" id="successMessage" role="status" aria-live="polite">
+      <i class="fas fa-check-circle"></i>
+      <span id="successMessageText"></span>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="arabic-greeting">
+        <div class="arabic-text" data-text="مَرْحَباً يَا رَمَضَان">
+          مَرْحَباً يَا رَمَضَان
+        </div>
+      </div>
+      
+      <h1 id="mainTitle">Registrasi Buka Puasa Bersama 1447 H</h1>
+      
+      <div class="center-name" id="centerName">Masjid Central Okayama</div>
+      
+      <div class="subtitle" id="subtitleText">
+        Silakan lengkapi formulir registrasi di bawah ini dengan data yang valid
+      </div>
+      
+      <div class="event-purpose" id="eventPurpose">
+        Formulir ini digunakan untuk pendataan jamaah agar pelaksanaan buka puasa bersama berjalan tertib, nyaman, dan penuh keberkahan
+      </div>
+    </div>
+
+    <!-- Islamic Divider -->
+    <div class="islamic-divider" aria-hidden="true">
+      <span>✦ ✦ ✦</span>
+    </div>
+
+    <!-- Registration Form -->
+    <div class="card">
+      <form id="registrationForm" autocomplete="on" novalidate>
+        
+        <!-- Section: Data Jamaah -->
+        <h3 class="section-title" id="sectionDataJamaah">
+          <i class="fas fa-user" aria-hidden="true"></i> Data Jamaah
+        </h3>
+
+        <!-- Full Name -->
+        <div class="field">
+          <label for="nama_lengkap" id="labelNamaLengkap">Nama Lengkap</label>
+          <div class="input-wrapper">
+            <i class="fas fa-user" aria-hidden="true"></i>
+            <input type="text" id="nama_lengkap" name="nama_lengkap" required 
+                   placeholder="Nama sesuai identitas" minlength="3" maxlength="100"
+                   aria-describedby="namaHint">
+          </div>
+          <div class="hint" id="namaHint">Wajib diisi sesuai KTP/Identitas</div>
+        </div>
+
+        <!-- Email -->
+        <div class="field">
+          <label for="email" id="labelEmail">Alamat Email</label>
+          <div class="input-wrapper">
+            <i class="fas fa-envelope" aria-hidden="true"></i>
+            <input type="email" id="email" name="email" required 
+                   placeholder="contoh@email.com" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+                   aria-describedby="emailHint">
+          </div>
+          <div class="hint" id="hintEmail">Konfirmasi akan dikirim ke email ini</div>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="field">
+          <label for="no_hp" id="labelNoHp">Nomor Telepon</label>
+          <div class="input-wrapper">
+            <i class="fas fa-phone" aria-hidden="true"></i>
+            <input type="tel" id="no_hp" name="no_hp" required 
+                   placeholder="081234567890 atau 08012345678" 
+                   inputmode="numeric"
+                   maxlength="15"
+                   aria-describedby="phoneHint">
+          </div>
+          <div class="hint" id="hintNoHp">Format Jepang (080/090/070) atau Indonesia (08)</div>
+        </div>
+
+        <!-- Residence -->
+        <div class="field">
+          <label for="domisili" id="labelDomisili">Domisili</label>
+          <div class="input-wrapper">
+            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+            <input type="text" id="domisili" name="domisili" list="neighborhoods" required 
+                   placeholder="Cari nama kelurahan/kecamatan">
+            <datalist id="neighborhoods">
+              <option value="Okayama-shi, Kita-ku, Kaminakano">
+              <option value="Okayama-shi, Kita-ku, Ima">
+              <option value="Okayama-shi, Kita-ku, Omoto">
+              <option value="Okayama-shi, Kita-ku, Tsushima">
+              <option value="Okayama-shi, Kita-ku, Hokan-cho">
+              <option value="Okayama-shi, Naka-ku, Nishigawara">
+              <option value="Okayama-shi, Minami-ku, Toyonari">
+              <option value="Kurashiki-shi, Achi">
+              <option value="Kurashiki-shi, Nakasho">
+              <option value="Kurashiki-shi, Chaya-machi">
+              <option value="Kurashiki-shi, Mizushima">
+              <option value="Kurashiki-shi, Kojima">
+              <option value="Kurashiki-shi, Tamashima">
+              <option value="Tamano-shi, Chikko">
+              <option value="Tamano-shi, Uno">
+              <option value="Tamano-shi, Hibibi">
+              <option value="Tamano-shi, Shibukawa">
+              <option value="Soja-shi, Chuo">
+              <option value="Soja-shi, Kiyone">
+              <option value="Soja-shi, Yamate">
+              <option value="Akaiwa-shi, Sanyo">
+              <option value="Setouchi-shi, Oku-cho">
+            </datalist>
+          </div>
+        </div>
+
+        <!-- Nationality -->
+        <div class="field">
+          <label for="kebangsaan" id="labelKebangsaan">Kebangsaan</label>
+          <div class="input-wrapper">
+            <i class="fas fa-globe" aria-hidden="true"></i>
+            <select id="kebangsaan" name="kebangsaan" required>
+              <option value="">Pilih kebangsaan</option>
+              <option value="Indonesia">Indonesia</option>
+              <option value="Jepang">Jepang</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <div class="other-nationality-wrapper" id="otherNationalityWrapper">
+            <div class="input-wrapper">
+              <i class="fas fa-edit" aria-hidden="true"></i>
+              <input type="text" id="kebangsaan_lainnya" name="kebangsaan_lainnya"
+                     placeholder="Masukkan kebangsaan Anda">
+            </div>
+          </div>
+        </div>
+
+        <!-- Age & Gender -->
+        <div class="row">
+          <div class="field">
+            <label for="usia" id="labelUsia">Usia</label>
+            <div class="input-wrapper">
+              <i class="fas fa-birthday-cake" aria-hidden="true"></i>
+              <input type="number" id="usia" name="usia" min="1" max="120" required 
+                     placeholder="Usia saat ini">
+            </div>
+          </div>
+
+          <div class="field">
+            <label id="labelJenisKelamin">Jenis Kelamin</label>
+            <div class="radio-group" role="radiogroup">
+              <input type="radio" id="jk_l" name="jk" value="Laki-laki" required checked>
+              <label for="jk_l">
+                <i class="fas fa-mars" aria-hidden="true"></i>
+                <span id="labelLakiLaki">Laki-laki</span>
+              </label>
+              <input type="radio" id="jk_p" name="jk" value="Perempuan">
+              <label for="jk_p">
+                <i class="fas fa-venus" aria-hidden="true"></i>
+                <span id="labelPerempuan">Perempuan</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Informasi Kehadiran -->
+        <h3 class="section-title" id="sectionKehadiran">
+          <i class="fas fa-users" aria-hidden="true"></i> Informasi Kehadiran
+        </h3>
+
+        <!-- Additional Adults -->
+        <div class="field">
+          <label for="dewasa_tambahan" id="labelDewasaTambahan">Dewasa Tambahan</label>
+          <div class="input-wrapper">
+            <i class="fas fa-user-plus" aria-hidden="true"></i>
+            <input type="number" id="dewasa_tambahan" name="dewasa_tambahan" min="0" max="5" value="0"
+                   placeholder="Jumlah dewasa selain Anda"
+                   aria-describedby="dewasaHint">
+          </div>
+          <div class="hint" id="hintDewasa">Usia 13 tahun ke atas</div>
+        </div>
+
+        <!-- Children -->
+        <div class="field">
+          <label id="labelDatangDenganAnak">Datang dengan Anak?</label>
+          <div class="toggle-group" role="radiogroup">
+            <input type="radio" id="anak_tidak" name="dengan_anak" value="Tidak" checked>
+            <label for="anak_tidak">
+              <i class="fas fa-times" aria-hidden="true"></i>
+              <span id="labelTidak">Tidak</span>
+            </label>
+            <input type="radio" id="anak_ya" name="dengan_anak" value="Ya">
+            <label for="anak_ya">
+              <i class="fas fa-child" aria-hidden="true"></i>
+              <span id="labelYa">Ya</span>
+            </label>
+          </div>
+          <div class="hint" id="hintAnak">Anak usia 0-12 tahun</div>
+        </div>
+
+        <!-- Number of Children -->
+        <div class="children-field-wrapper" id="childrenFieldWrapper">
+          <div class="field">
+            <label for="jumlah_anak" id="labelJumlahAnak">Jumlah Anak</label>
+            <div class="input-wrapper">
+              <i class="fas fa-baby" aria-hidden="true"></i>
+              <input type="number" id="jumlah_anak" name="jumlah_anak" min="1" max="5" value="1"
+                     aria-describedby="usiaAnakHint">
+            </div>
+            <div class="hint" id="hintUsiaAnak">Usia maksimal 12 tahun</div>
+          </div>
+        </div>
+
+        <!-- Total Summary -->
+        <div class="total-summary">
+          <div class="total-label">
+            <i class="fas fa-users" aria-hidden="true"></i>
+            <span id="totalLabel">Total yang akan hadir</span>
+          </div>
+          <div class="total-number" id="totalAttendees">1</div>
+          <div class="hint" id="totalDetail">1 pendaftar, 0 dewasa, 0 anak</div>
+        </div>
+
+        <!-- Section: Persetujuan -->
+        <h3 class="section-title" id="sectionPersetujuan">
+          <i class="fas fa-file-signature" aria-hidden="true"></i> Persetujuan
+        </h3>
+
+        <!-- Consent -->
+        <div class="consent">
+          <input type="checkbox" id="consentCheckbox" required>
+          <label for="consentCheckbox">
+            <span class="consent-label-text" id="consentText">
+              <strong>Data jamaah</strong> digunakan semata-mata untuk keperluan pendataan dan kelancaran pelaksanaan acara buka puasa bersama. Kami menjamin kerahasiaan data Anda.
+            </span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>
+          <span id="submitText">Daftar Sekarang</span>
+        </button>
+
+        <!-- Progress Indicator -->
+        <div class="progress-indicator" id="progressIndicator">
+          <div class="loading-spinner" aria-hidden="true"></div>
+          <div style="font-size: 0.9rem; color: var(--accent-teal); margin-top: 0.5rem;" id="progressText">
+            Mengirim data...
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="prayer-message" id="prayerMessage">
+        <i class="fas fa-star-and-crescent" aria-hidden="true"></i>
+        Semoga Allah menerima amal ibadah kita di bulan Ramadan yang mulia ini
+      </div>
+      
+      <div id="footerCopyright">© 2026 — Masjid Central Okayama</div>
+      
+      <div class="contact">
+        <span id="contactText">Untuk informasi lebih lanjut:</span>
+        <a href="mailto:ibadurrahmanislamiccenter@gmail.com">
+          ibadurrahmanislamiccenter@gmail.com
+        </a>
+      </div>
+    </footer>
+  </div>
+</main>
+
+<!-- JavaScript External -->
+<script src="script.js"></script>
+</body>
+</html>
