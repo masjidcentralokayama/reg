@@ -436,7 +436,9 @@ function showNotification(message, type = CONSTANTS.NOTIFICATION_TYPES.INFO) {
 // FUNGSI LOGIN
 // ============================================
 
-async function handleLogin() {
+async function handleLogin(e) {
+  if (e) e.preventDefault();
+  
   const username = DOM.usernameInput.value.trim();
   const password = DOM.passwordInput.value;
   
@@ -451,17 +453,13 @@ async function handleLogin() {
   DOM.loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Memproses...';
   
   try {
-    // Kirim permintaan login ke backend
-    const response = await fetch(LOGIN_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username,
-        password: password,
-        timestamp: new Date().toISOString()
-      })
+    // Bangun URL dengan parameter (menghindari Preflight CORS untuk Google Apps Script)
+    const url = `${API_URL}?action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}&timestamp=${Date.now()}`;
+    
+    const response = await fetch(url, {
+      method: 'GET', // Menggunakan GET untuk menghindari CORS preflight
+      mode: 'cors',
+      cache: 'no-cache'
     });
     
     if (!response.ok) {
@@ -470,33 +468,44 @@ async function handleLogin() {
     
     const result = await response.json();
     
-    if (result.success && result.token) {
-      // Simpan token dan data user
-      authToken = result.token;
+    if (result.status === "success") {
+      // Simpan session
+      authToken = result.token || result.sessionId;
       currentUser = result.user;
       
-      // Simpan session
-      SessionManager.saveSession(authToken, currentUser);
+      // Simpan session (gunakan SessionManager yang sudah ada)
+      if (typeof SessionManager !== 'undefined') {
+        SessionManager.saveSession(authToken, currentUser);
+      } else {
+        // Fallback: simpan ke sessionStorage
+        sessionStorage.setItem('user', JSON.stringify(currentUser));
+        if (authToken) {
+          sessionStorage.setItem('token', authToken);
+        }
+      }
+      
+      console.log("Login sukses:", result);
       
       // Redirect ke dashboard
       showDashboard();
       DOM.loginForm.reset();
       
     } else {
-      throw new Error(result.error || 'Login gagal');
+      throw new Error(result.message || result.error || 'Login gagal');
     }
     
   } catch (error) {
     console.error('Login error:', error);
     showError('Username atau password salah');
-    playSound('error');
     
     // Shake effect untuk feedback
     const loginBox = document.querySelector('.login-box');
-    loginBox.style.animation = 'shake 0.5s';
-    setTimeout(() => {
-      loginBox.style.animation = '';
-    }, 500);
+    if (loginBox) {
+      loginBox.style.animation = 'shake 0.5s';
+      setTimeout(() => {
+        loginBox.style.animation = '';
+      }, 500);
+    }
   } finally {
     // Reset button
     DOM.loginBtn.disabled = false;
@@ -504,15 +513,8 @@ async function handleLogin() {
   }
 }
 
-function showError(message) {
-  DOM.loginError.innerHTML = `<i class="fas fa-exclamation-circle" aria-hidden="true"></i> ${message}`;
-  DOM.loginError.style.display = 'block';
-}
-
-function showLogin() {
-  DOM.loginContainer.style.display = 'flex';
-  DOM.dashboardContainer.style.display = 'none';
-}
+// Pastikan form menggunakan event listener yang benar
+document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
 
 // ============================================
 // FUNGSI DASHBOARD
