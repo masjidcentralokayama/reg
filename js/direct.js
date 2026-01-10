@@ -1,6 +1,6 @@
 // 🔥 TAMBAHKAN SCRIPT URL ANDA DI SINI
 // Ganti dengan URL Google Apps Script Anda
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMdWUWrpx1F1uI1bVBej0v5l6WOrLGCKwxS2yg8vsLiWo13iTdOKt3D-Z6sAIU7ndv/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwC1NSbdAcIAAA2r5K6P16KA77888I73JWf92TgbzhgtgRCam50n76leWPkSycIBSTA/exec";
 
 // ===============================
 // LANGKAH 1 — VALIDASI ID WAJIB ADA
