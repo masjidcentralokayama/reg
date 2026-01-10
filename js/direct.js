@@ -264,7 +264,7 @@ function generateQRCode(id) {
 }
 
 // ===============================
-// LANGKAH 2 — FETCH DATA DARI SERVER
+// LANGKAH 2 — FETCH DATA DARI SERVER (DENGAN VALIDASI FLEKSIBEL)
 // ===============================
 function fetchRegistrationData() {
     console.log("Fetching data for ID:", id);
@@ -278,9 +278,38 @@ function fetchRegistrationData() {
             return res.json();
         })
         .then(data => {
-            if (data.status !== "valid" || !data.id) {
-                alert("ID tidak valid atau tidak terdaftar");
-                window.location.href = "index.html";
+            console.log("Server response:", data);
+            
+            // ============================================
+            // VALIDASI FLEKSIBEL: CEK BEBERAPA KEMUNGKINAN RESPONSE
+            // ============================================
+            let isValid = false;
+            
+            // Kemungkinan 1: Format dengan status "valid"
+            if (data.status === "valid" && data.id) {
+                isValid = true;
+            }
+            // Kemungkinan 2: Format dengan success = true
+            else if (data.success === true && data.id) {
+                isValid = true;
+            }
+            // Kemungkinan 3: Format langsung dengan data (tidak ada wrapper)
+            else if (data.id && data.nama) {
+                isValid = true;
+            }
+            
+            if (!isValid) {
+                console.error("Validation failed. Response data:", data);
+                
+                // Tampilkan pesan error yang lebih informatif
+                let errorMsg = "ID tidak valid atau tidak terdaftar";
+                if (data.message) errorMsg = data.message;
+                if (data.error) errorMsg = data.error;
+                
+                showError(`${errorMsg}. Silakan hubungi panitia.`);
+                
+                // Tampilkan tombol untuk kembali ke halaman utama
+                document.getElementById('errorActions').style.display = 'flex';
                 return;
             }
 
@@ -299,7 +328,15 @@ function fetchRegistrationData() {
         })
         .catch(err => {
             console.error("Fetch error:", err);
-            showError("Gagal memverifikasi data dari server. Silakan coba lagi.");
+            
+            // Tampilkan pesan error yang sesuai dengan bahasa saat ini
+            const errorMsg = translations[currentLang].errorMessage || 
+                           "Gagal memverifikasi data dari server. Silakan coba lagi.";
+            showError(`${errorMsg} (Error: ${err.message})`);
+            
+            // Tampilkan tombol untuk coba lagi
+            document.getElementById('retryBtn').style.display = 'inline-block';
+            document.getElementById('retryBtn').onclick = fetchRegistrationData;
         });
 }
 
@@ -524,12 +561,7 @@ function initializePage() {
         document.getElementById('adminLink').style.display = 'flex';
     }
     
-    // 4. Fetch data dari server
-    setTimeout(() => {
-    fetchRegistrationData();
-    }, 1000);
-    
-    // 5. Setup event listeners
+    // 4. Setup event listeners untuk tombol
     const downloadBtn = document.getElementById('downloadBtn');
     if (downloadBtn) {
         downloadBtn.addEventListener('click', downloadRegistrationCard);
@@ -540,7 +572,29 @@ function initializePage() {
         shareBtn.addEventListener('click', shareCard);
     }
     
+    const homeBtn = document.getElementById('homeBtn');
+    if (homeBtn) {
+        homeBtn.addEventListener('click', () => {
+            window.location.href = "index.html";
+        });
+    }
+    
+    const retryBtn = document.getElementById('retryBtn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', fetchRegistrationData);
+    }
+    
+    // 5. Fetch data dari server (tunda sedikit untuk memastikan DOM siap)
+    setTimeout(() => {
+        fetchRegistrationData();
+    }, 500);
+    
     console.log("Page initialized successfully with language:", currentLang);
 }
 
-document.addEventListener("DOMContentLoaded", initializePage);
+// Inisialisasi saat DOM siap
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePage);
+} else {
+    initializePage();
+}
