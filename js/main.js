@@ -13,6 +13,52 @@ const CONFIG = Object.freeze({
 });
 
 // ============================================
+// FUNGSI UTILITAS AWAL (PERBAIKAN)
+// ============================================
+
+// PERBAIKAN: Fungsi calculateTotal dideklarasikan di awal
+function calculateTotal() {
+  const registrant = 1;
+  const tambahan = document.getElementById('dewasa_tambahan');
+  const additionalAdults = tambahan ? (parseInt(tambahan.value) || 0) : 0;
+  let children = 0;
+  
+  const denganAnak = document.querySelector('input[name="dengan_anak"]:checked');
+  if (denganAnak && denganAnak.value === 'Ya') {
+    const jmlAnak = document.getElementById('jumlah_anak');
+    children = jmlAnak ? (parseInt(jmlAnak.value) || 0) : 0;
+  }
+  
+  const total = registrant + additionalAdults + children;
+  
+  const totalElement = document.getElementById('totalAttendees');
+  if (totalElement) totalElement.textContent = total;
+  
+  const detailElement = document.getElementById('totalDetail');
+  if (detailElement) {
+    const t = translations[lang] || translations.id;
+    if (lang === 'id') detailElement.textContent = `${registrant} pendaftar, ${additionalAdults} dewasa, ${children} anak`;
+    else if (lang === 'en') detailElement.textContent = `${registrant} registrant, ${additionalAdults} adults, ${children} children`;
+    else detailElement.textContent = `登録者${registrant}名、大人${additionalAdults}名、子供${children}名`;
+  }
+  return total;
+}
+
+// PERBAIKAN REGEX EMAIL (Cegah Error /v)
+function validateEmail(email) {
+  // Regex yang aman untuk semua browser (Firefox, Chrome, Safari)
+  const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+  return re.test(email);
+}
+
+function validatePhoneNumber(phone) {
+  if (!phone) return false;
+  // Perbaikan: Menambahkan escape pada tanda hubung (-) agar tidak error di Firefox/Safari
+  const phoneRegex = /^(\+62|62|08|\+81|81|070|080|090)[0-9]{7,12}$/;
+  return phoneRegex.test(phone.replace(/\D/g, ''));
+}
+
+// ============================================
 // VARIABEL STATE GLOBAL
 // ============================================
 let lang = 'id';
@@ -247,62 +293,34 @@ const translations = {
 };
 
 // ============================================
-// FUNGSI UTILITAS (PERBAIKAN REGEX)
-// ============================================
-
-function validateEmail(email) {
-  // Perbaikan: Menggunakan regex yang lebih kompatibel lintas browser
-  const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-  return re.test(email);
-}
-
-function validatePhoneNumber(phone) {
-  if (!phone) return false;
-  // Perbaikan: Menambahkan escape pada tanda hubung (-) agar tidak error di Firefox/Safari
-  const phoneRegex = /^(\+62|62|08|\+81|81|070|080|090)[0-9]{7,12}$/;
-  return phoneRegex.test(phone.replace(/\D/g, ''));
-}
-
-// ============================================
 // FUNGSI API (PERBAIKAN CORS & REDIRECT)
 // ============================================
 
 async function makeAPICall(action, params = {}, method = 'POST') {
   try {
-    const dataToSend = {
-      ...params,
-      api_token: CONFIG.API_TOKEN,
-      website_url: '' 
-    };
-    
     const formData = new URLSearchParams();
-    for (const key in dataToSend) {
-      formData.append(key, dataToSend[key]);
+    formData.append('api_token', CONFIG.API_TOKEN);
+    for (const key in params) {
+      formData.append(key, params[key]);
     }
-    
-    // PERBAIKAN UTAMA: Google Apps Script memerlukan redirect: 'follow'
-    // Dan mode: 'no-cors' HANYA jika Anda tidak butuh membaca response (tapi kita butuh JSON)
-    // Jadi kita gunakan mode: 'cors' dengan penanganan redirect yang benar.
-    const response = await fetch(
-      `${CONFIG.API_URL}?action=${encodeURIComponent(action)}`,
-      {
-        method: method,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: method === 'POST' ? formData.toString() : null,
-        redirect: 'follow', // WAJIB
-        mode: 'cors'
-      }
-    );
+
+    const response = await fetch(`${CONFIG.API_URL}?action=${encodeURIComponent(action)}`, {
+      method: method,
+      // Jika POST, kirim body. Jika GET, biarkan null.
+      body: method === 'POST' ? formData : null,
+      mode: 'cors', // Harus tetap cors
+      redirect: 'follow' // INI KUNCINYA agar tidak NetworkError
+    });
+
+    // Cek jika response berupa redirect manual dari Google
+    if (response.type === 'opaque') {
+        throw new Error("Akses ditolak. Pastikan Deployment Apps Script diatur ke 'Anyone'.");
+    }
 
     return await response.json();
   } catch (error) {
-    console.error(`API call failed (${action}):`, error);
-    return {
-      success: false,
-      error: getTranslation('networkError')
-    };
+    console.error("API Error:", error);
+    return { success: false, error: "Server tidak merespon (CORS/Redirect Error)" };
   }
 }
 
@@ -347,32 +365,29 @@ async function checkDuplicate() {
   }
 }
 
-async function checkSystemHealth() {
-  try {
-    const response = await fetch(`${CONFIG.API_URL}?action=health&api_token=${CONFIG.API_TOKEN}`, {
-      method: 'GET',
-      mode: 'cors',
-      redirect: 'follow'
-    });
-    
-    const result = await response.json();
-    
-    if (result.status === 'active') {
-      console.log('✅ Sistem backend aktif');
-      if (!result.registration_open) {
-        showAlert('alert', getTranslation('registrationClosed'));
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) submitBtn.disabled = true;
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ Tidak dapat menghubungi server:', error);
-  }
+async function submitRegistration(data) {
+  return await makeAPICall('register', data, 'POST');
 }
 
 // ============================================
 // MULTILINGUAL SUPPORT
 // ============================================
+
+function getTranslation(key) {
+  const t = translations[lang] || translations.id;
+  return t[key] || key;
+}
+
+function showAlert(type, message) {
+  // Implementasi showAlert sesuai kebutuhan UI Anda
+  console.log(`${type}: ${message}`);
+  alert(message); // Sementara gunakan alert biasa
+}
+
+function showDuplicateAlert() {
+  const duplicateAlert = document.getElementById('duplicateAlert');
+  if (duplicateAlert) duplicateAlert.classList.add('active');
+}
 
 function initMultilingual() {
   const t = translations[lang];
@@ -702,6 +717,35 @@ function setupEventListeners() {
 }
 
 // ============================================
+// HEALTH CHECK FUNGSI
+// ============================================
+
+async function checkSystemHealth() {
+  try {
+    const response = await fetch(`${CONFIG.API_URL}?action=health&api_token=${CONFIG.API_TOKEN}`, {
+      method: 'GET',
+      mode: 'cors',
+      redirect: 'follow'
+    });
+    
+    const result = await response.json();
+    
+    if (result.status === 'active') {
+      console.log('✅ Sistem backend aktif');
+      
+      // Tampilkan info jika pendaftaran belum/tidak dibuka
+      if (!result.registration_open) {
+        showAlert('alert', getTranslation('registrationClosed'));
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) submitBtn.disabled = true;
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Tidak dapat menghubungi server:', error);
+  }
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -745,31 +789,3 @@ document.addEventListener('DOMContentLoaded', function() {
   // Check system health saat load
   checkSystemHealth();
 });
-
-// ============================================
-// HEALTH CHECK FUNGSI
-// ============================================
-
-async function checkSystemHealth() {
-  try {
-    const response = await fetch(`${CONFIG.API_URL}?action=health`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    
-    const result = await response.json();
-    
-    if (result.status === 'active') {
-      console.log('✅ Sistem backend aktif');
-      
-      // Tampilkan info jika pendaftaran belum/tidak dibuka
-      if (!result.registration_open) {
-        showAlert('alert', getTranslation('registrationClosed'));
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) submitBtn.disabled = true;
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ Tidak dapat menghubungi server:', error);
-  }
-}
