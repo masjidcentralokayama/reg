@@ -3,7 +3,7 @@
 // ============================================
 const CONFIG = Object.freeze({
   // ⚠️ URL
-  API_URL: "https://script.google.com/macros/s/AKfycbxMdWUWrpx1F1uI1bVBej0v5l6WOrLGCKwxS2yg8vsLiWo13iTdOKt3D-Z6sAIU7ndv/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbwC1NSbdAcIAAA2r5K6P16KA77888I73JWf92TgbzhgtgRCam50n76leWPkSycIBSTA/exec",
   API_TOKEN: "MCO_Iftar1447_K3ySecure_@2026", // Sama dengan di GAS
   MAX_OTP_ATTEMPTS: 3,
   OTP_TIMEOUT: 60000,
