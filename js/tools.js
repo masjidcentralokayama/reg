@@ -75,7 +75,7 @@ function formatDate(date = new Date()) {
 // KONFIGURASI SISTEM
 // ============================================
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwv9CIAKRgjiNjCedYDVmFNJz4PPvfE_nKehWnvhmDOVM73lcl-CS8mb2b90ZYAkaT3/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwmZI49Ib5U49RbybUFGS6uKln03vjMxI2vWYY6e5xrWZwMia_8eULpH2sfqaBuy5RF/exec";
 const LOGIN_ENDPOINT = `${API_URL}?action=login`;
 
 // ============================================
