@@ -366,6 +366,8 @@ async function checkDuplicate() {
 }
 
 async function submitRegistration(data) {
+  // Tambahkan status awal "Belum Hadir"
+  data.status = "Belum Hadir";
   return await makeAPICall('register', data, 'POST');
 }
 
@@ -581,6 +583,13 @@ async function handleFormSubmit(e) {
       if (submitBtn) {
         submitBtn.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 8px;"></i> ${getTranslation('success')}`;
         submitBtn.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+      }
+      
+      // Redirect ke halaman konfirmasi dengan id
+      if (result.registrationId) {
+        setTimeout(() => {
+          window.location.href = `direct.html?id=${result.registrationId}`;
+        }, 1500);
       }
     } else {
       if (result.status === "duplicate") {
