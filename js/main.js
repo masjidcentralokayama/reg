@@ -483,7 +483,7 @@ function initMultilingual() {
 }
 
 // ============================================
-// FORM HANDLING
+// FORM HANDLING (PERBAIKAN - Sudah Diupdate)
 // ============================================
 
 async function handleFormSubmit(e) {
@@ -576,38 +576,53 @@ async function handleFormSubmit(e) {
   }
   
   try {
+    // PERBAIKAN: Gunakan pola yang disarankan
     const result = await submitRegistration(data);
     
-    if (result.success) {
+    // PERBAIKAN: Cek success atau status seperti yang disarankan
+    if (result.success || result.status === "success") {
       showAlert('success', getTranslation('registrationComplete'));
+      
+      // PERBAIKAN: Ambil ID dari salah satu kemungkinan nama properti
+      const finalId = result.registrationId || result.registration_id;
+      
       if (submitBtn) {
         submitBtn.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 8px;"></i> ${getTranslation('success')}`;
         submitBtn.style.background = 'linear-gradient(135deg, #059669, #10b981)';
       }
       
-      // Redirect ke halaman konfirmasi dengan id
-      if (result.registrationId) {
-        setTimeout(() => {
-          window.location.href = `direct.html?id=${result.registrationId}`;
-        }, 1500);
-      }
+      // PERBAIKAN: Redirect dengan pola yang lebih baik
+      setTimeout(() => {
+        if (finalId) {
+          window.location.href = `direct.html?id=${encodeURIComponent(finalId)}`;
+        } else {
+          window.location.href = 'direct.html';
+        }
+      }, 1500);
+      
     } else {
-      if (result.status === "duplicate") {
-        showDuplicateAlert();
-      } else {
-        showAlert('alert', result.error || getTranslation('networkError'));
-      }
-      isSubmitting = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-      }
-      if (progressIndicator) {
-        progressIndicator.classList.remove('active');
-      }
+      // PERBAIKAN: Jika result.success false, lempar ke catch
+      throw new Error(result.message || result.error || 'Registration failed');
     }
+    
   } catch (error) {
-    showAlert('alert', getTranslation('networkError'));
+    // PERBAIKAN: Tangani error dengan lebih baik
+    console.error("Registration error:", error);
+    
+    // Tangani kasus khusus
+    if (error.message.includes("duplicate") || error.message.includes("sudah terdaftar")) {
+      showDuplicateAlert();
+    } else if (error.message.includes("kuota") || error.message.includes("quota")) {
+      showAlert('alert', getTranslation('quotaFull'));
+    } else if (error.message.includes("ditutup") || error.message.includes("closed")) {
+      showAlert('alert', getTranslation('registrationClosed'));
+    } else {
+      // Tampilkan pesan error yang sesuai
+      const errorMsg = error.message || getTranslation('networkError');
+      showAlert('alert', errorMsg);
+    }
+    
+    // Reset state
     isSubmitting = false;
     if (submitBtn) {
       submitBtn.disabled = false;
