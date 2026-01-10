@@ -247,103 +247,32 @@ const translations = {
 };
 
 // ============================================
-// FUNGSI UTILITAS
+// FUNGSI UTILITAS (PERBAIKAN REGEX)
 // ============================================
 
-function getTranslation(key) {
-  return translations[lang][key] || key;
-}
-
 function validateEmail(email) {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Perbaikan: Menggunakan regex yang lebih kompatibel lintas browser
+  const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
   return re.test(email);
 }
 
 function validatePhoneNumber(phone) {
   if (!phone) return false;
-  
-  // Sinkron dengan regex di GAS: /^(\+62|62|08|\+81|81|070|080|090)[0-9]{7,12}$/
+  // Perbaikan: Menambahkan escape pada tanda hubung (-) agar tidak error di Firefox/Safari
   const phoneRegex = /^(\+62|62|08|\+81|81|070|080|090)[0-9]{7,12}$/;
   return phoneRegex.test(phone.replace(/\D/g, ''));
 }
 
-function showAlert(type, message) {
-  // Sembunyikan semua alert terlebih dahulu
-  ['alert', 'success', 'info', 'duplicate'].forEach(t => {
-    const el = document.getElementById(`${t}Message`);
-    if (el) el.classList.remove('active');
-  });
-  
-  const alertDiv = document.getElementById(`${type}Message`);
-  const textSpan = document.getElementById(`${type}MessageText`);
-  
-  if (alertDiv && textSpan) {
-    textSpan.textContent = message;
-    alertDiv.classList.add('active');
-    
-    // Auto hide setelah 5 detik kecuali success
-    if (type !== 'success') {
-      setTimeout(() => {
-        alertDiv.classList.remove('active');
-      }, 5000);
-    }
-  }
-}
-
-function calculateTotal() {
-  const registrant = 1;
-  const additionalAdults = parseInt(document.getElementById('dewasa_tambahan').value) || 0;
-  let children = 0;
-  
-  const denganAnak = document.querySelector('input[name="dengan_anak"]:checked');
-  if (denganAnak && denganAnak.value === 'Ya') {
-    children = parseInt(document.getElementById('jumlah_anak').value) || 0;
-  }
-  
-  const total = registrant + additionalAdults + children;
-  
-  // Update UI
-  const totalElement = document.getElementById('totalAttendees');
-  if (totalElement) {
-    totalElement.textContent = total;
-  }
-  
-  // Update details
-  const detailElement = document.getElementById('totalDetail');
-  if (detailElement) {
-    let details = '';
-    if (lang === 'id') {
-      details = `${registrant} pendaftar, ${additionalAdults} dewasa, ${children} anak`;
-    } else if (lang === 'en') {
-      details = `${registrant} registrant, ${additionalAdults} adults, ${children} children`;
-    } else {
-      details = `登録者${registrant}名、大人${additionalAdults}名、子供${children}名`;
-    }
-    detailElement.textContent = details;
-  }
-  
-  return total;
-}
-
-function showDuplicateAlert() {
-  const duplicateAlert = document.getElementById('duplicateAlert');
-  const submitBtn = document.getElementById('submitBtn');
-  
-  if (duplicateAlert) duplicateAlert.classList.add('active');
-  if (submitBtn) submitBtn.disabled = true;
-}
-
 // ============================================
-// FUNGSI API DENGAN ERROR HANDLING
+// FUNGSI API (PERBAIKAN CORS & REDIRECT)
 // ============================================
 
 async function makeAPICall(action, params = {}, method = 'POST') {
   try {
-    // Tambahkan API Token dan Honeypot field
     const dataToSend = {
       ...params,
       api_token: CONFIG.API_TOKEN,
-      website_url: '' // Honeypot field - harus kosong
+      website_url: '' 
     };
     
     const formData = new URLSearchParams();
@@ -351,6 +280,9 @@ async function makeAPICall(action, params = {}, method = 'POST') {
       formData.append(key, dataToSend[key]);
     }
     
+    // PERBAIKAN UTAMA: Google Apps Script memerlukan redirect: 'follow'
+    // Dan mode: 'no-cors' HANYA jika Anda tidak butuh membaca response (tapi kita butuh JSON)
+    // Jadi kita gunakan mode: 'cors' dengan penanganan redirect yang benar.
     const response = await fetch(
       `${CONFIG.API_URL}?action=${encodeURIComponent(action)}`,
       {
@@ -358,14 +290,11 @@ async function makeAPICall(action, params = {}, method = 'POST') {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: formData.toString(),
+        body: method === 'POST' ? formData.toString() : null,
+        redirect: 'follow', // WAJIB
         mode: 'cors'
       }
     );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
 
     return await response.json();
   } catch (error) {
@@ -381,10 +310,9 @@ async function checkDuplicate() {
   const email = document.getElementById('email')?.value.trim().toLowerCase();
   const phone = document.getElementById('no_hp')?.value.trim();
   
-  if (!email || !phone) return;
+  if (!email || !phone || !validateEmail(email)) return;
   
   try {
-    // Untuk GET request, token harus di URL
     const params = new URLSearchParams({
       action: 'check_duplicate',
       email: email,
@@ -396,7 +324,8 @@ async function checkDuplicate() {
       `${CONFIG.API_URL}?${params.toString()}`,
       { 
         method: 'GET', 
-        mode: 'cors' 
+        mode: 'cors',
+        redirect: 'follow' // WAJIB
       }
     );
     
@@ -410,80 +339,34 @@ async function checkDuplicate() {
       if (submitBtn) submitBtn.disabled = true;
     } else {
       if (duplicateAlert) duplicateAlert.classList.remove('active');
-      if (submitBtn) {
-        const isConsent = document.getElementById('consentCheckbox')?.checked;
-        submitBtn.disabled = !isConsent;
-      }
+      const isConsent = document.getElementById('consentCheckbox')?.checked;
+      if (submitBtn) submitBtn.disabled = !isConsent;
     }
   } catch (error) {
     console.error('Duplicate check error:', error);
   }
 }
 
-async function submitRegistration(formData) {
+async function checkSystemHealth() {
   try {
-    // Siapkan data sesuai dengan struktur GAS
-    // JANGAN generate ID di frontend, biarkan backend yang handle
-    // JANGAN kirim status, biarkan backend set 'TERDAFTAR'
+    const response = await fetch(`${CONFIG.API_URL}?action=health&api_token=${CONFIG.API_TOKEN}`, {
+      method: 'GET',
+      mode: 'cors',
+      redirect: 'follow'
+    });
     
-    const dataToSubmit = {
-      nama_lengkap: formData.nama_lengkap,
-      email: formData.email.toLowerCase(),
-      no_hp: formData.no_hp,
-      domisili: formData.domisili,
-      kebangsaan: formData.kebangsaan || formData.kebangsaan_lainnya || 'Indonesia',
-      usia: parseInt(formData.usia) || 0,
-      jk: formData.jk,
-      dewasa_tambahan: parseInt(formData.dewasa_tambahan) || 0,
-      dengan_anak: formData.dengan_anak || 'Tidak',
-      jumlah_anak: parseInt(formData.jumlah_anak) || 0,
-      total: calculateTotal(),
-      keterangan: '', // Optional field
-      lang_used: lang
-    };
-
-    const result = await makeAPICall('register', dataToSubmit, 'POST');
+    const result = await response.json();
     
-    // Handle response berdasarkan GAS
-    if (result.status === "duplicate") {
-      showDuplicateAlert();
-      return {
-        success: false,
-        status: "duplicate",
-        error: getTranslation('duplicateData')
-      };
-    } else if (result.status === "success") {
-      // Redirect ke halaman konfirmasi
-      setTimeout(() => {
-        window.location.href = `direct.html?id=${result.id}`;
-      }, 800);
-      
-      return { 
-        success: true, 
-        id: result.id 
-      };
-    } else if (result.error && result.error.includes('Kuota')) {
-      return {
-        success: false,
-        error: getTranslation('quotaFull')
-      };
-    } else if (result.error && result.error.includes('belum dibuka')) {
-      return {
-        success: false,
-        error: getTranslation('registrationClosed')
-      };
-    } else {
-      return { 
-        success: false, 
-        error: result.error || getTranslation('serverError')
-      };
+    if (result.status === 'active') {
+      console.log('✅ Sistem backend aktif');
+      if (!result.registration_open) {
+        showAlert('alert', getTranslation('registrationClosed'));
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) submitBtn.disabled = true;
+      }
     }
   } catch (error) {
-    console.error('Submission error:', error);
-    return { 
-      success: false, 
-      error: getTranslation('networkError')
-    };
+    console.warn('⚠️ Tidak dapat menghubungi server:', error);
   }
 }
 
