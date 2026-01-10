@@ -269,10 +269,15 @@ function generateQRCode(id) {
 function fetchRegistrationData() {
     console.log("Fetching data for ID:", id);
     
-    fetch(`${SCRIPT_URL}?id=${id}`)
-        .then(res => res.json())
+    fetch(`${SCRIPT_URL}?action=get_registration&id=${id}`)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+        })
         .then(data => {
-            if (data.status !== "valid") {
+            if (data.status !== "valid" || !data.id) {
                 alert("ID tidak valid atau tidak terdaftar");
                 window.location.href = "index.html";
                 return;
