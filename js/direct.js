@@ -269,7 +269,8 @@ function generateQRCode(id) {
 function fetchRegistrationData() {
     console.log("Fetching data for ID:", id);
     
-    fetch(`${SCRIPT_URL}?action=get_registration&id=${id}`)
+    const API_TOKEN = "MCO_Iftar1447_K3ySecure_@2026";
+    fetch(`${SCRIPT_URL}?action=get_registration&id=${id}&api_token=${API_TOKEN}`)
         .then(res => {
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
