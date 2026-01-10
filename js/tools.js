@@ -437,84 +437,56 @@ function showNotification(message, type = CONSTANTS.NOTIFICATION_TYPES.INFO) {
 // ============================================
 
 async function handleLogin(e) {
-  if (e) e.preventDefault();
+  e.preventDefault();
   
-  const username = DOM.usernameInput.value.trim();
-  const password = DOM.passwordInput.value;
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
   
-  // Validasi input
-  if (!username || !password) {
-    showError('Harap isi username dan password');
-    return;
-  }
-  
-  // Tampilkan loading
-  DOM.loginBtn.disabled = true;
-  DOM.loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Memproses...';
+  // Menggunakan GET dengan parameter URL
+  const url = `https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`;
   
   try {
-    // Bangun URL dengan parameter (menghindari Preflight CORS untuk Google Apps Script)
-    const url = `${API_URL}?action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}&timestamp=${Date.now()}`;
-    
     const response = await fetch(url, {
-      method: 'GET', // Menggunakan GET untuk menghindari CORS preflight
-      mode: 'cors',
-      cache: 'no-cache'
+      method: 'GET',
+      mode: 'cors'
     });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
     
     const result = await response.json();
     
     if (result.status === "success") {
-      // Simpan session
-      authToken = result.token || result.sessionId;
-      currentUser = result.user;
-      
-      // Simpan session (gunakan SessionManager yang sudah ada)
-      if (typeof SessionManager !== 'undefined') {
-        SessionManager.saveSession(authToken, currentUser);
-      } else {
-        // Fallback: simpan ke sessionStorage
-        sessionStorage.setItem('user', JSON.stringify(currentUser));
-        if (authToken) {
-          sessionStorage.setItem('token', authToken);
-        }
-      }
-      
-      console.log("Login sukses:", result);
-      
-      // Redirect ke dashboard
-      showDashboard();
-      DOM.loginForm.reset();
-      
+      // Simpan token dan data user
+      sessionStorage.setItem('token', result.token);
+      sessionStorage.setItem('user', JSON.stringify(result.user));
+      window.location.href = 'dashboard.html';
     } else {
-      throw new Error(result.message || result.error || 'Login gagal');
+      alert("Login gagal: " + result.message);
     }
-    
   } catch (error) {
-    console.error('Login error:', error);
-    showError('Username atau password salah');
-    
-    // Shake effect untuk feedback
-    const loginBox = document.querySelector('.login-box');
-    if (loginBox) {
-      loginBox.style.animation = 'shake 0.5s';
-      setTimeout(() => {
-        loginBox.style.animation = '';
-      }, 500);
-    }
-  } finally {
-    // Reset button
-    DOM.loginBtn.disabled = false;
-    DOM.loginBtn.innerHTML = '<i class="fas fa-sign-in-alt" aria-hidden="true"></i> Masuk ke Dashboard';
+    console.error("Login error:", error);
+    alert("Terjadi kesalahan koneksi");
   }
 }
 
-// Pastikan form menggunakan event listener yang benar
-document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+async function handleRegister(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  
+  data.action = 'register';
+  data.api_token = 'MCO_Iftar1447_K3ySecure_@2026'; // API token dari config
+  
+  const response = await fetch('https://script.google.com/macros/s/AKfycbwmZI49Ib5U49RbybUFGS6uKln03vjMxI2vWYY6e5xrWZwMia_8eULpH2sfqaBuy5RF/exec', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+  
+  const result = await response.json();
+  // ... handle result
+}
 
 // ============================================
 // FUNGSI DASHBOARD
