@@ -525,7 +525,9 @@ function initializePage() {
     }
     
     // 4. Fetch data dari server
+    setTimeout(() => {
     fetchRegistrationData();
+    }, 1000);
     
     // 5. Setup event listeners
     const downloadBtn = document.getElementById('downloadBtn');
