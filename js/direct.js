@@ -40,8 +40,8 @@ const translations = {
         eventTime: "Waktu",
         location: "Lokasi",
         
-        dateValue: "Sabtu, 28 Maret 2026",
-        timeValue: "17.30 - 20.00 WIB",
+        dateValue: "Sabtu, 14 Maret 2026",
+        timeValue: "17.30 - 20.00 JST",
         locationValue: "Masjid Central Okayama",
         
         instruction: "Harap tunjukkan QR Code ini kepada petugas saat kedatangan. Kartu ini berlaku untuk semua peserta yang terdaftar.",
@@ -58,7 +58,7 @@ const translations = {
         locationTitle: "Lokasi Acara",
         locationDetail: "Masjid Central Okayama<br>Okayama-shi, Kita-ku, Jepang",
         contactTitle: "Kontak Panitia",
-        contactDetail: "Email: ibadurrahmanislamiccenter@gmail.com<br>Telepon: 080-XXXX-XXXX",
+        contactDetail: "Email: ibadurrahmanislamiccenter@gmail.com<br>Telepon: 070-5671-0616",
         
         errorMessage: "Gagal memuat data dari server. Silakan coba lagi.",
         downloadError: "Maaf, terjadi kesalahan saat mengunduh kartu. Silakan coba lagi atau hubungi panitia.",
@@ -89,8 +89,8 @@ const translations = {
         eventTime: "Time",
         location: "Location",
         
-        dateValue: "Saturday, March 28, 2026",
-        timeValue: "5:30 PM - 8:00 PM WIB",
+        dateValue: "Saturday, March 14, 2026",
+        timeValue: "5:30 PM - 8:00 PM JST",
         locationValue: "Central Okayama Mosque",
         
         instruction: "Please show this QR Code to the officer upon arrival. This card is valid for all registered participants.",
@@ -107,7 +107,7 @@ const translations = {
         locationTitle: "Event Location",
         locationDetail: "Central Okayama Mosque<br>Okayama-shi, Kita-ku, Japan",
         contactTitle: "Committee Contact",
-        contactDetail: "Email: ibadurrahmanislamiccenter@gmail.com<br>Phone: 080-XXXX-XXXX",
+        contactDetail: "Email: ibadurrahmanislamiccenter@gmail.com<br>Phone: 070-5671-0616",
         
         errorMessage: "Failed to load data from server. Please try again.",
         downloadError: "Sorry, an error occurred while downloading the card. Please try again or contact the committee.",
@@ -138,8 +138,8 @@ const translations = {
         eventTime: "時間",
         location: "場所",
         
-        dateValue: "2026年3月28日（土）",
-        timeValue: "17:30 - 20:00 WIB",
+        dateValue: "2026年3月14日（土）",
+        timeValue: "17:30 - 20:00 JST",
         locationValue: "セントラル岡山モスク",
         
         instruction: "到着時にこのQRコードを係員に提示してください。このカードは登録されたすべての参加者に有効です。",
@@ -154,9 +154,9 @@ const translations = {
         contactInfo: "詳細については：",
         
         locationTitle: "イベント会場",
-        locationDetail: "セントラル岡山モスク<br>日本、岡山市北区",
+        locationDetail: "岡山セントラルモスク<br>日本、岡山市北区",
         contactTitle: "委員会連絡先",
-        contactDetail: "メール: ibadurrahmanislamiccenter@gmail.com<br>電話: 080-XXXX-XXXX",
+        contactDetail: "メール: ibadurrahmanislamiccenter@gmail.com<br>電話: 070-5671-0616",
         
         errorMessage: "サーバーからのデータの読み込みに失敗しました。もう一度お試しください。",
         downloadError: "申し訳ありません、カードのダウンロード中にエラーが発生しました。もう一度お試しいただくか、委員会にご連絡ください。",
