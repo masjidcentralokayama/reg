@@ -6,17 +6,10 @@
 // KONFIGURASI SISTEM
 // ============================================
 
-// CORS Proxy untuk development
-const USE_CORS_PROXY = true; // Set ke false jika tidak pakai proxy
-const CORS_PROXY = 'https://corsproxy.io/?';
-// Alternatif proxies:
-// - https://api.allorigins.win/raw?url=
-// - https://cors-anywhere.herokuapp.com/
-// - https://thingproxy.freeboard.io/fetch/
-
-// URL Google Apps Script
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwmZI49Ib5U49RbybUFGS6uKln03vjMxI2vWYY6e5xrWZwMia_8eULpH2sfqaBuy5RF/exec";
-const API_URL = USE_CORS_PROXY ? CORS_PROXY + encodeURIComponent(GAS_URL) : GAS_URL;
+// URL Google Apps Script (SAMA DENGAN FILE LAIN)
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxMdWUWrpx1F1uI1bVBej0v5l6WOrLGCKwxS2yg8vsLiWo13iTdOKt3D-Z6sAIU7ndv/exec";
+const API_URL = GAS_URL;
+const API_TOKEN = "MCO_Iftar1447_K3ySecure_@2026"; // Sama dengan di GAS
 
 // ============================================
 // UTILITAS UMUM
@@ -65,7 +58,7 @@ const CONSTANTS = {
   
   STATUS: {
     PRESENT: 'Hadir',
-    WAITING: 'Menunggu'
+    WAITING: 'Belum Hadir'
   },
   
   NOTIFICATION_TYPES: {
@@ -369,7 +362,7 @@ function showNotification(message, type = CONSTANTS.NOTIFICATION_TYPES.INFO) {
 }
 
 // ============================================
-// FUNGSI LOGIN (DENGAN CORS HANDLING)
+// FUNGSI LOGIN (TERHUBUNG DENGAN GAS)
 // ============================================
 
 async function handleLogin(e) {
@@ -386,36 +379,26 @@ async function handleLogin(e) {
   showLoading('Memproses login...');
   
   try {
-    // Simulasi login karena CORS issue
-    // Untuk testing, gunakan user hardcoded
-    
-    // Cek kredensial hardcoded
-    const validUsers = {
-      'admin': { 
-        password: 'musazain', 
-        role: 'Administrator',
-        permissions: ['scanner', 'participants', 'analytics', 'settings']
+    const response = await fetch(`${API_URL}?action=login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      'panitia': { 
-        password: 'panitiamco', 
-        role: 'Panitia',
-        permissions: ['scanner']
-      }
-    };
-    
-    if (validUsers[username] && validUsers[username].password === password) {
-      // Simulasi token dan user data
-      const token = 'fake_token_' + Date.now();
-      const userData = {
+      body: new URLSearchParams({
         username: username,
-        role: validUsers[username].role,
-        permissions: validUsers[username].permissions
-      };
-      
+        password: password,
+        api_token: API_TOKEN
+      }),
+      redirect: 'follow'
+    });
+    
+    const result = await response.json();
+    
+    if (result.success && result.token) {
       // Simpan session
-      SessionManager.saveSession(token, userData);
-      currentUser = userData;
-      authToken = token;
+      SessionManager.saveSession(result.token, result.user);
+      currentUser = result.user;
+      authToken = result.token;
       
       showNotification('Login berhasil!', CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
       
@@ -424,7 +407,7 @@ async function handleLogin(e) {
         showDashboard();
       }, 500);
     } else {
-      throw new Error('Username atau password salah');
+      throw new Error(result.error || 'Username atau password salah');
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -521,27 +504,39 @@ function setupDashboardListeners() {
 }
 
 // ============================================
-// FUNGSI DATA PESERTA (DENGAN MOCK DATA)
+// FUNGSI DATA PESERTA (TERHUBUNG DENGAN GAS)
 // ============================================
 
 async function loadDashboardData() {
   try {
-    // Load participants data dengan mock data karena CORS
-    participantsData = generateMockParticipants(50);
+    // Load participants data dari GAS
+    const response = await fetch(`${API_URL}?action=get_all_participants&api_token=${API_TOKEN}`, {
+      method: 'GET',
+      redirect: 'follow'
+    });
     
-    // Update stats
-    updateStats();
+    const result = await response.json();
     
-    // Update table
-    updateParticipantsTable();
-    
-    // Update charts jika user memiliki permission
-    if (currentUser && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
-      updateCharts();
+    if (result.success) {
+      participantsData = result.data;
+      
+      // Update stats
+      updateStats();
+      
+      // Update table
+      updateParticipantsTable();
+      
+      // Update charts jika user memiliki permission
+      if (currentUser && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
+        updateCharts();
+      }
+      
+      // Update last update time
+      updateLastUpdateTime();
+      
+    } else {
+      throw new Error(result.error || 'Gagal memuat data');
     }
-    
-    // Update last update time
-    updateLastUpdateTime();
     
   } catch (error) {
     console.error('Error loading dashboard data:', error);
@@ -549,39 +544,11 @@ async function loadDashboardData() {
   }
 }
 
-function generateMockParticipants(count) {
-  const mockParticipants = [];
-  const names = ['Ahmad', 'Budi', 'Citra', 'Dewi', 'Eko', 'Fajar', 'Gita', 'Hadi', 'Indra', 'Joko'];
-  const locations = ['Jakarta', 'Bandung', 'Surabaya', 'Yogyakarta', 'Semarang', 'Malang', 'Bali', 'Lombok', 'Medan', 'Palembang'];
-  
-  for (let i = 1; i <= count; i++) {
-    const isPresent = Math.random() > 0.4;
-    const nameIndex = Math.floor(Math.random() * names.length);
-    const locationIndex = Math.floor(Math.random() * locations.length);
-    
-    mockParticipants.push({
-      id: 'ID' + String(i).padStart(3, '0'),
-      nama: names[nameIndex] + ' ' + ['Santoso', 'Wijaya', 'Kusuma', 'Setiawan', 'Prasetyo'][nameIndex % 5],
-      phone: '08' + Math.floor(Math.random() * 1000000000).toString().padStart(10, '0'),
-      email: `jamaah${i}@gmail.com`,
-      domisili: locations[locationIndex],
-      total: Math.floor(Math.random() * 5) + 1,
-      status: isPresent ? CONSTANTS.STATUS.PRESENT : CONSTANTS.STATUS.WAITING,
-      checkin_time: isPresent ? new Date(Date.now() - Math.random() * 86400000).toLocaleString('id-ID') : '-',
-      usia: Math.floor(Math.random() * 40) + 20,
-      gender: Math.random() > 0.5 ? 'Laki-laki' : 'Perempuan',
-      registration_date: new Date(Date.now() - Math.random() * 86400000 * 7).toLocaleDateString('id-ID')
-    });
-  }
-  
-  return mockParticipants;
-}
-
 function updateStats() {
   const stats = {
     totalRegistered: participantsData.length,
     totalPresent: participantsData.filter(p => p.status === CONSTANTS.STATUS.PRESENT).length,
-    totalWaiting: participantsData.length - participantsData.filter(p => p.status === CONSTANTS.STATUS.PRESENT).length,
+    totalWaiting: participantsData.filter(p => p.status === CONSTANTS.STATUS.WAITING).length,
     totalPeople: participantsData.reduce((sum, p) => sum + (parseInt(p.total) || 1), 0)
   };
   
@@ -721,7 +688,8 @@ async function startScanner() {
     if (DOM.startScannerBtn) DOM.startScannerBtn.disabled = true;
     if (DOM.stopScannerBtn) DOM.stopScannerBtn.disabled = false;
     
-    simulateQRScanning(); // Simulasi scanning untuk demo
+    // Mulai scanning loop
+    scanQRCode();
     showNotification('Scanner aktif', CONSTANTS.NOTIFICATION_TYPES.INFO);
     
   } catch (error) {
@@ -744,6 +712,62 @@ async function startScanner() {
   }
 }
 
+async function scanQRCode() {
+  if (!scannerActive || !DOM.video) return;
+  
+  try {
+    // Gunakan jsQR untuk membaca QR code
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = DOM.video.videoWidth;
+    canvas.height = DOM.video.videoHeight;
+    
+    context.drawImage(DOM.video, 0, 0, canvas.width, canvas.height);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Coba scan dengan jsQR
+    const code = jsQR(imageData.data, canvas.width, canvas.height);
+    
+    if (code) {
+      // QR code ditemukan
+      console.log('QR Code ditemukan:', code.data);
+      stopScanner();
+      
+      // Cari peserta berdasarkan ID dari QR code
+      const participantId = code.data;
+      const participant = participantsData.find(p => p.id === participantId);
+      
+      if (participant) {
+        currentScannerData = participant;
+        showScanResult(participant);
+      } else {
+        // Coba fetch dari server jika tidak ada di cache
+        try {
+          const response = await fetch(`${API_URL}?action=get_registration&id=${participantId}&api_token=${API_TOKEN}`);
+          const result = await response.json();
+          
+          if (result.success && result.data) {
+            currentScannerData = result.data;
+            showScanResult(result.data);
+          } else {
+            showNotification('ID tidak ditemukan di database', CONSTANTS.NOTIFICATION_TYPES.ERROR);
+            setTimeout(() => startScanner(), 2000);
+          }
+        } catch (error) {
+          showNotification('Gagal memverifikasi ID', CONSTANTS.NOTIFICATION_TYPES.ERROR);
+          setTimeout(() => startScanner(), 2000);
+        }
+      }
+    } else {
+      // Lanjut scanning jika tidak ada QR code
+      setTimeout(() => scanQRCode(), 100);
+    }
+  } catch (error) {
+    console.error('Scan error:', error);
+    setTimeout(() => scanQRCode(), 100);
+  }
+}
+
 function stopScanner() {
   if (!scannerActive) return;
   
@@ -761,29 +785,6 @@ function stopScanner() {
   }
   
   showNotification('Scanner dihentikan', CONSTANTS.NOTIFICATION_TYPES.INFO);
-}
-
-// Simulasi scanning untuk demo
-function simulateQRScanning() {
-  if (!scannerActive) return;
-  
-  // Untuk demo, setelah 3 detik akan otomatis "scan" random participant
-  setTimeout(() => {
-    if (scannerActive && participantsData.length > 0) {
-      stopScanner();
-      
-      // Pilih random participant yang belum check-in
-      const waitingParticipants = participantsData.filter(p => p.status === CONSTANTS.STATUS.WAITING);
-      if (waitingParticipants.length > 0) {
-        const randomParticipant = waitingParticipants[Math.floor(Math.random() * waitingParticipants.length)];
-        currentScannerData = randomParticipant;
-        showScanResult(randomParticipant);
-      } else {
-        showNotification('Semua jamaah sudah check-in!', CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
-        setTimeout(() => startScanner(), 2000);
-      }
-    }
-  }, 3000);
 }
 
 function showScanResult(participant) {
@@ -856,35 +857,56 @@ async function confirmCheckin() {
   
   showLoading('Memproses check-in...');
   
-  // Simulasi delay untuk proses check-in
-  setTimeout(() => {
-    // Update status di local data
-    const index = participantsData.findIndex(p => p.id === currentScannerData.id);
-    if (index !== -1) {
-      participantsData[index].status = CONSTANTS.STATUS.PRESENT;
-      participantsData[index].checkin_time = new Date().toLocaleString('id-ID');
-    }
+  try {
+    const response = await fetch(`${API_URL}?action=checkin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        id: currentScannerData.id,
+        api_token: API_TOKEN
+      }),
+      redirect: 'follow'
+    });
     
-    // Update UI
-    updateStats();
-    updateParticipantsTable();
-    updateCharts();
+    const result = await response.json();
     
-    showNotification(`Check-in berhasil untuk ${currentScannerData.nama}`, CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
-    
-    // Reset scanner
-    cancelCheckin();
-    
-    // Auto restart scanner setelah 2 detik
-    setTimeout(() => {
-      const scannerTab = document.getElementById('scannerTab');
-      if (scannerTab && scannerTab.classList.contains('active')) {
-        startScanner();
+    if (result.success) {
+      // Update status di local data
+      const index = participantsData.findIndex(p => p.id === currentScannerData.id);
+      if (index !== -1) {
+        participantsData[index].status = CONSTANTS.STATUS.PRESENT;
+        participantsData[index].checkin_time = new Date().toLocaleString('id-ID');
       }
-    }, 2000);
-    
+      
+      // Update UI
+      updateStats();
+      updateParticipantsTable();
+      updateCharts();
+      
+      showNotification(`Check-in berhasil untuk ${currentScannerData.nama}`, CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
+      
+      // Reset scanner
+      cancelCheckin();
+      
+      // Auto restart scanner setelah 2 detik
+      setTimeout(() => {
+        const scannerTab = document.getElementById('scannerTab');
+        if (scannerTab && scannerTab.classList.contains('active')) {
+          startScanner();
+        }
+      }, 2000);
+      
+    } else {
+      throw new Error(result.error || 'Gagal melakukan check-in');
+    }
+  } catch (error) {
+    console.error('Check-in error:', error);
+    showNotification(`Gagal check-in: ${error.message}`, CONSTANTS.NOTIFICATION_TYPES.ERROR);
+  } finally {
     hideLoading();
-  }, 1000);
+  }
 }
 
 function cancelCheckin() {
@@ -902,7 +924,7 @@ function showManualCheckin() {
       currentScannerData = participant;
       showScanResult(participant);
     } else {
-      alert('ID Registrasi tidak ditemukan');
+      alert('ID Registrasi tidak ditemukan di data lokal');
     }
   }
 }
@@ -921,7 +943,7 @@ function updateCharts() {
 
 function updateAttendanceChart() {
   const present = participantsData.filter(p => p.status === CONSTANTS.STATUS.PRESENT).length;
-  const waiting = participantsData.length - present;
+  const waiting = participantsData.filter(p => p.status === CONSTANTS.STATUS.WAITING).length;
   
   chartManager.create('attendanceChart', {
     type: 'doughnut',
@@ -990,7 +1012,7 @@ function updateLocationChart() {
   // Hitung distribusi domisili
   const locationData = {};
   participantsData.forEach(p => {
-    const location = p.domisili;
+    const location = p.domisili || 'Tidak diketahui';
     locationData[location] = (locationData[location] || 0) + 1;
   });
   
@@ -1099,17 +1121,24 @@ function updateAnalyticsSummary() {
   }
   
   const checkins = participantsData
-    .filter(p => p.status === CONSTANTS.STATUS.PRESENT && p.checkin_time !== '-')
+    .filter(p => p.status === CONSTANTS.STATUS.PRESENT && p.checkin_time)
     .map(p => new Date());
   
   const lastCheckin = checkins.length > 0 ? 
-    new Date().toLocaleString('id-ID') : '-';
+    new Date(Math.max(...checkins.map(d => d.getTime()))).toLocaleString('id-ID') : '-';
   
   if (DOM.lastCheckin) {
     DOM.lastCheckin.textContent = lastCheckin;
   }
   
-  const todayReg = Math.floor(participantsData.length * 0.3);
+  // Hitung pendaftaran hari ini
+  const today = new Date().toDateString();
+  const todayReg = participantsData.filter(p => {
+    if (p.registration_date) {
+      return new Date(p.registration_date).toDateString() === today;
+    }
+    return false;
+  }).length;
   
   if (DOM.todayReg) {
     DOM.todayReg.textContent = todayReg + ' orang';
@@ -1174,17 +1203,39 @@ async function manualCheckin(participantId) {
     if (confirm(`Check-in ${participant.nama}?`)) {
       showLoading('Memproses check-in...');
       
-      setTimeout(() => {
-        participant.status = CONSTANTS.STATUS.PRESENT;
-        participant.checkin_time = new Date().toLocaleString('id-ID');
+      try {
+        const response = await fetch(`${API_URL}?action=checkin`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            id: participantId,
+            api_token: API_TOKEN
+          }),
+          redirect: 'follow'
+        });
         
-        updateStats();
-        updateParticipantsTable();
-        updateCharts();
+        const result = await response.json();
         
-        showNotification(`Check-in berhasil untuk ${participant.nama}`, CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
+        if (result.success) {
+          participant.status = CONSTANTS.STATUS.PRESENT;
+          participant.checkin_time = new Date().toLocaleString('id-ID');
+          
+          updateStats();
+          updateParticipantsTable();
+          updateCharts();
+          
+          showNotification(`Check-in berhasil untuk ${participant.nama}`, CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
+        } else {
+          throw new Error(result.error || 'Gagal melakukan check-in');
+        }
+      } catch (error) {
+        console.error('Manual check-in error:', error);
+        showNotification(`Gagal check-in: ${error.message}`, CONSTANTS.NOTIFICATION_TYPES.ERROR);
+      } finally {
         hideLoading();
-      }, 1000);
+      }
     }
   }
 }
