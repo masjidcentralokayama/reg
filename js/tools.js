@@ -232,6 +232,38 @@ const DOM = {
 };
 
 // ============================================
+// FUNGSI YANG HILANG
+// ============================================
+
+// Fungsi showLogin yang hilang
+function showLogin() {
+  console.log('🔐 Menampilkan form login');
+  
+  if (DOM.loginContainer) {
+    DOM.loginContainer.style.display = 'block';
+  }
+  if (DOM.dashboardContainer) {
+    DOM.dashboardContainer.style.display = 'none';
+  }
+  
+  // Reset form login
+  if (DOM.loginForm) {
+    DOM.loginForm.reset();
+  }
+  if (DOM.loginError) {
+    DOM.loginError.style.display = 'none';
+  }
+  
+  // Stop scanner jika aktif
+  if (scannerActive) {
+    stopScanner();
+  }
+  
+  // Cleanup resources
+  cleanupResources();
+}
+
+// ============================================
 // STATE APLIKASI
 // ============================================
 
@@ -287,23 +319,31 @@ let audioBuffers = {};
 
 // Update waktu terakhir update
 function updateLastUpdateTime() {
-  DOM.updateTime.textContent = formatTime(new Date());
+  if (DOM.updateTime) {
+    DOM.updateTime.textContent = formatTime(new Date());
+  }
 }
 
 // Update waktu server
 function updateServerTime() {
-  DOM.serverTime.textContent = formatTime(new Date());
+  if (DOM.serverTime) {
+    DOM.serverTime.textContent = formatTime(new Date());
+  }
 }
 
 // Tampilkan loading overlay
 function showLoading(text = 'Memuat data...') {
-  DOM.loadingText.textContent = text;
-  DOM.loadingOverlay.style.display = 'flex';
+  if (DOM.loadingText && DOM.loadingOverlay) {
+    DOM.loadingText.textContent = text;
+    DOM.loadingOverlay.style.display = 'flex';
+  }
 }
 
 // Sembunyikan loading overlay
 function hideLoading() {
-  DOM.loadingOverlay.style.display = 'none';
+  if (DOM.loadingOverlay) {
+    DOM.loadingOverlay.style.display = 'none';
+  }
 }
 
 // Inisialisasi audio untuk efek suara
@@ -437,55 +477,59 @@ function showNotification(message, type = CONSTANTS.NOTIFICATION_TYPES.INFO) {
 // ============================================
 
 async function handleLogin(e) {
-  e.preventDefault();
+  if (e) e.preventDefault();
   
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+  const username = DOM.usernameInput ? DOM.usernameInput.value : '';
+  const password = DOM.passwordInput ? DOM.passwordInput.value : '';
   
-  // Menggunakan GET dengan parameter URL
-  const url = `https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`;
+  // Validasi input
+  if (!username || !password) {
+    showNotification('Harap isi username dan password', CONSTANTS.NOTIFICATION_TYPES.WARNING);
+    playSound('warning');
+    return;
+  }
+  
+  showLoading('Memproses login...');
   
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors'
-    });
+    // Kirim request login
+    const response = await fetch(`${API_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     
     const result = await response.json();
     
-    if (result.status === "success") {
-      // Simpan token dan data user
-      sessionStorage.setItem('token', result.token);
-      sessionStorage.setItem('user', JSON.stringify(result.user));
-      window.location.href = 'dashboard.html';
+    if (result.status === "success" && result.token && result.user) {
+      // Simpan session
+      SessionManager.saveSession(result.token, result.user);
+      
+      // Set global variables
+      currentUser = result.user;
+      authToken = result.token;
+      
+      showNotification('Login berhasil!', CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
+      playSound('success');
+      
+      // Tampilkan dashboard
+      showDashboard();
     } else {
-      alert("Login gagal: " + result.message);
+      throw new Error(result.message || 'Login gagal');
     }
   } catch (error) {
-    console.error("Login error:", error);
-    alert("Terjadi kesalahan koneksi");
+    console.error('Login error:', error);
+    showNotification(`Login gagal: ${error.message}`, CONSTANTS.NOTIFICATION_TYPES.ERROR);
+    playSound('error');
+    
+    // Tampilkan error di form
+    if (DOM.loginError) {
+      DOM.loginError.textContent = error.message;
+      DOM.loginError.style.display = 'block';
+    }
+  } finally {
+    hideLoading();
   }
-}
-
-async function handleRegister(e) {
-  e.preventDefault();
-  
-  const formData = new FormData(e.target);
-  const data = Object.fromEntries(formData);
-  
-  data.action = 'register';
-  data.api_token = 'MCO_Iftar1447_K3ySecure_@2026'; // API token dari config
-  
-  const response = await fetch('https://script.google.com/macros/s/AKfycbwmZI49Ib5U49RbybUFGS6uKln03vjMxI2vWYY6e5xrWZwMia_8eULpH2sfqaBuy5RF/exec', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  });
-  
-  const result = await response.json();
-  // ... handle result
 }
 
 // ============================================
@@ -493,8 +537,12 @@ async function handleRegister(e) {
 // ============================================
 
 async function showDashboard() {
-  DOM.loginContainer.style.display = 'none';
-  DOM.dashboardContainer.style.display = 'block';
+  if (DOM.loginContainer) {
+    DOM.loginContainer.style.display = 'none';
+  }
+  if (DOM.dashboardContainer) {
+    DOM.dashboardContainer.style.display = 'block';
+  }
   
   // Inisialisasi audio
   initAudio();
@@ -532,13 +580,15 @@ async function showDashboard() {
 }
 
 function updateUIForRole() {
-  DOM.userRole.textContent = currentUser.role;
+  if (DOM.userRole && currentUser) {
+    DOM.userRole.textContent = currentUser.role;
+  }
   
   // Sembunyikan/munculkan tab berdasarkan permissions
   const tabs = document.querySelectorAll('.tab');
   tabs.forEach(tab => {
     const tabName = tab.dataset.tab;
-    if (currentUser.permissions.includes(tabName)) {
+    if (currentUser && currentUser.permissions && currentUser.permissions.includes(tabName)) {
       tab.style.display = 'flex';
     } else {
       tab.style.display = 'none';
@@ -546,79 +596,102 @@ function updateUIForRole() {
   });
   
   // Jika scanner adalah satu-satunya permission, aktifkan tab scanner
-  if (currentUser.permissions.length === 1 && currentUser.permissions[0] === CONSTANTS.PERMISSIONS.SCANNER) {
-    document.querySelector('[data-tab="scanner"]').click();
+  if (currentUser && currentUser.permissions && 
+      currentUser.permissions.length === 1 && 
+      currentUser.permissions[0] === CONSTANTS.PERMISSIONS.SCANNER) {
+    const scannerTab = document.querySelector('[data-tab="scanner"]');
+    if (scannerTab) {
+      scannerTab.click();
+    }
   }
 }
 
 function setupDashboardListeners() {
   // Logout button
-  DOM.logoutBtn.addEventListener('click', function() {
-    if (confirm('Apakah Anda yakin ingin logout?')) {
-      // Stop scanner if active
-      if (scannerActive) {
-        stopScanner();
+  if (DOM.logoutBtn) {
+    DOM.logoutBtn.addEventListener('click', function() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        // Stop scanner if active
+        if (scannerActive) {
+          stopScanner();
+        }
+        
+        // Clear session
+        SessionManager.clearSession();
+        currentUser = null;
+        authToken = null;
+        
+        // Cleanup resources
+        cleanupResources();
+        
+        // Show login
+        showLogin();
       }
-      
-      // Clear session
-      SessionManager.clearSession();
-      currentUser = null;
-      authToken = null;
-      
-      // Cleanup resources
-      cleanupResources();
-      
-      // Show login
-      showLogin();
-    }
-  });
+    });
+  }
   
   // Refresh button
-  DOM.refreshBtn.addEventListener('click', async function() {
-    const btn = this;
-    const originalHtml = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>';
-    btn.disabled = true;
-    
-    await loadDashboardData();
-    
-    btn.innerHTML = originalHtml;
-    btn.disabled = false;
-    
-    showNotification('Data diperbarui', CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
-    playSound('success');
-  });
+  if (DOM.refreshBtn) {
+    DOM.refreshBtn.addEventListener('click', async function() {
+      const btn = this;
+      const originalHtml = btn.innerHTML;
+      
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>';
+      btn.disabled = true;
+      
+      await loadDashboardData();
+      
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+      
+      showNotification('Data diperbarui', CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
+      playSound('success');
+    });
+  }
   
   // Export button (hanya untuk admin)
-  DOM.exportBtn.addEventListener('click', exportData);
+  if (DOM.exportBtn) {
+    DOM.exportBtn.addEventListener('click', exportData);
+  }
   
   // Search functionality
-  DOM.searchInput.addEventListener('input', function() {
-    currentPage = 1;
-    updateParticipantsTable();
-  });
+  if (DOM.searchInput) {
+    DOM.searchInput.addEventListener('input', function() {
+      currentPage = 1;
+      updateParticipantsTable();
+    });
+  }
   
   // Pagination
-  DOM.prevPageBtn.addEventListener('click', function() {
-    if (currentPage > 1) {
-      currentPage--;
-      updateParticipantsTable();
-    }
-  });
+  if (DOM.prevPageBtn) {
+    DOM.prevPageBtn.addEventListener('click', function() {
+      if (currentPage > 1) {
+        currentPage--;
+        updateParticipantsTable();
+      }
+    });
+  }
   
-  DOM.nextPageBtn.addEventListener('click', function() {
-    const totalPages = Math.ceil(participantsData.length / itemsPerPage);
-    if (currentPage < totalPages) {
-      currentPage++;
-      updateParticipantsTable();
-    }
-  });
+  if (DOM.nextPageBtn) {
+    DOM.nextPageBtn.addEventListener('click', function() {
+      const totalPages = Math.ceil(participantsData.length / itemsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        updateParticipantsTable();
+      }
+    });
+  }
   
   // Settings buttons (hanya untuk admin)
-  DOM.savePasswordBtn.addEventListener('click', savePassword);
-  DOM.saveEmailBtn.addEventListener('click', saveEmail);
-  DOM.backupBtn.addEventListener('click', backupData);
+  if (DOM.savePasswordBtn) {
+    DOM.savePasswordBtn.addEventListener('click', savePassword);
+  }
+  if (DOM.saveEmailBtn) {
+    DOM.saveEmailBtn.addEventListener('click', saveEmail);
+  }
+  if (DOM.backupBtn) {
+    DOM.backupBtn.addEventListener('click', backupData);
+  }
 }
 
 // ============================================
@@ -634,12 +707,12 @@ async function loadDashboardData() {
     updateStats();
     
     // Update table hanya jika user memiliki permission
-    if (currentUser.permissions.includes(CONSTANTS.PERMISSIONS.PARTICIPANTS)) {
+    if (currentUser && currentUser.permissions && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.PARTICIPANTS)) {
       updateParticipantsTable();
     }
     
     // Update charts hanya jika user memiliki permission
-    if (currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
+    if (currentUser && currentUser.permissions && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
       updateCharts();
     }
     
@@ -704,11 +777,15 @@ function updateStats() {
     }
   });
   
-  DOM.dataCount.textContent = `${participantsData.length} data tersimpan`;
+  if (DOM.dataCount) {
+    DOM.dataCount.textContent = `${participantsData.length} data tersimpan`;
+  }
 }
 
 function updateParticipantsTable() {
-  const searchTerm = DOM.searchInput.value.toLowerCase();
+  if (!DOM.participantsTableBody) return;
+  
+  const searchTerm = DOM.searchInput ? DOM.searchInput.value.toLowerCase() : '';
   
   // Filter data
   const filteredData = participantsData.filter(p =>
@@ -747,7 +824,7 @@ function updateParticipantsTable() {
           </button>` : 
           '<span class="text-muted"><i class="fas fa-check" aria-hidden="true"></i> Selesai</span>'
         }
-        ${currentUser.role === CONSTANTS.ROLES.ADMIN ? 
+        ${currentUser && currentUser.role === CONSTANTS.ROLES.ADMIN ? 
           `<button class="btn-action btn-view" data-id="${participant.id}" aria-label="Lihat detail ${participant.nama}">
             <i class="fas fa-eye" aria-hidden="true"></i>
           </button>` : ''
@@ -759,12 +836,20 @@ function updateParticipantsTable() {
   });
   
   // Update pagination info
-  DOM.pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages}`;
-  DOM.tableTotal.textContent = filteredData.length;
+  if (DOM.pageInfo) {
+    DOM.pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages}`;
+  }
+  if (DOM.tableTotal) {
+    DOM.tableTotal.textContent = filteredData.length;
+  }
   
   // Update pagination buttons
-  DOM.prevPageBtn.disabled = currentPage === 1;
-  DOM.nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+  if (DOM.prevPageBtn) {
+    DOM.prevPageBtn.disabled = currentPage === 1;
+  }
+  if (DOM.nextPageBtn) {
+    DOM.nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+  }
 }
 
 // ============================================
@@ -772,13 +857,23 @@ function updateParticipantsTable() {
 // ============================================
 
 function setupScanner() {
-  DOM.startScannerBtn.addEventListener('click', startScanner);
-  DOM.stopScannerBtn.addEventListener('click', stopScanner);
-  DOM.manualCheckinBtn.addEventListener('click', showManualCheckin);
+  if (DOM.startScannerBtn) {
+    DOM.startScannerBtn.addEventListener('click', startScanner);
+  }
+  if (DOM.stopScannerBtn) {
+    DOM.stopScannerBtn.addEventListener('click', stopScanner);
+  }
+  if (DOM.manualCheckinBtn) {
+    DOM.manualCheckinBtn.addEventListener('click', showManualCheckin);
+  }
   
   // Confirm check-in button
-  DOM.confirmCheckinBtn.addEventListener('click', confirmCheckin);
-  DOM.cancelCheckinBtn.addEventListener('click', cancelCheckin);
+  if (DOM.confirmCheckinBtn) {
+    DOM.confirmCheckinBtn.addEventListener('click', confirmCheckin);
+  }
+  if (DOM.cancelCheckinBtn) {
+    DOM.cancelCheckinBtn.addEventListener('click', cancelCheckin);
+  }
   
   // Handle tab visibility changes
   document.addEventListener('visibilitychange', () => {
@@ -817,24 +912,30 @@ async function startScanner() {
     
     videoStream = await navigator.mediaDevices.getUserMedia(constraints);
     
-    DOM.video.srcObject = videoStream;
-    
-    // Handle video errors
-    DOM.video.onerror = () => {
-      throw new Error('Gagal memuat video stream');
-    };
-    
-    await new Promise((resolve, reject) => {
-      DOM.video.onloadedmetadata = resolve;
-      DOM.video.onerror = reject;
-      setTimeout(() => reject(new Error('Timeout loading video')), 5000);
-    });
-    
-    DOM.video.play();
+    if (DOM.video) {
+      DOM.video.srcObject = videoStream;
+      
+      // Handle video errors
+      DOM.video.onerror = () => {
+        throw new Error('Gagal memuat video stream');
+      };
+      
+      await new Promise((resolve, reject) => {
+        DOM.video.onloadedmetadata = resolve;
+        DOM.video.onerror = reject;
+        setTimeout(() => reject(new Error('Timeout loading video')), 5000);
+      });
+      
+      DOM.video.play();
+    }
     
     scannerActive = true;
-    DOM.startScannerBtn.disabled = true;
-    DOM.stopScannerBtn.disabled = false;
+    if (DOM.startScannerBtn) {
+      DOM.startScannerBtn.disabled = true;
+    }
+    if (DOM.stopScannerBtn) {
+      DOM.stopScannerBtn.disabled = false;
+    }
     
     scanQRCode();
     showNotification('Scanner aktif', CONSTANTS.NOTIFICATION_TYPES.INFO);
@@ -895,17 +996,23 @@ function stopScanner() {
   
   // Reset scanner state
   scannerActive = false;
-  DOM.startScannerBtn.disabled = false;
-  DOM.stopScannerBtn.disabled = true;
+  if (DOM.startScannerBtn) {
+    DOM.startScannerBtn.disabled = false;
+  }
+  if (DOM.stopScannerBtn) {
+    DOM.stopScannerBtn.disabled = true;
+  }
   
   // Hide result
-  DOM.scanResult.classList.remove('active');
+  if (DOM.scanResult) {
+    DOM.scanResult.classList.remove('active');
+  }
   
   showNotification('Scanner dihentikan', CONSTANTS.NOTIFICATION_TYPES.INFO);
 }
 
 function scanQRCode() {
-  if (!scannerActive) return;
+  if (!scannerActive || !DOM.video) return;
   
   // Pastikan video siap
   if (DOM.video.readyState === DOM.video.HAVE_ENOUGH_DATA) {
@@ -1024,12 +1131,14 @@ async function fetchParticipantById(id) {
 }
 
 function showScanResult(participant) {
+  if (!DOM.scanResultContent || !DOM.scanResult) return;
+  
   const isPresent = participant.status === CONSTANTS.STATUS.PRESENT;
   
   // Tampilkan data berdasarkan role
   let participantInfo = '';
   
-  if (currentUser.role === CONSTANTS.ROLES.ADMIN) {
+  if (currentUser && currentUser.role === CONSTANTS.ROLES.ADMIN) {
     participantInfo = `
       <div class="info-row">
         <strong>ID:</strong> ${participant.id}
@@ -1090,11 +1199,11 @@ function showScanResult(participant) {
   
   // Auto-hide setelah 15 detik jika tidak ada aksi
   setTimeout(() => {
-    if (DOM.scanResult.classList.contains('active')) {
+    if (DOM.scanResult && DOM.scanResult.classList.contains('active')) {
       cancelCheckin();
       // Restart scanner jika masih di tab scanner
       const scannerTab = document.getElementById('scannerTab');
-      if (scannerTab.classList.contains('active')) {
+      if (scannerTab && scannerTab.classList.contains('active')) {
         setTimeout(() => startScanner(), 1000);
       }
     }
@@ -1102,6 +1211,8 @@ function showScanResult(participant) {
 }
 
 function showScanError(message) {
+  if (!DOM.scanResultContent || !DOM.scanResult) return;
+  
   DOM.scanResultContent.innerHTML = `
     <div class="alert alert-danger">
       <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
@@ -1120,7 +1231,7 @@ function showScanError(message) {
     cancelCheckin();
     // Restart scanner jika masih di tab scanner
     const scannerTab = document.getElementById('scannerTab');
-    if (scannerTab.classList.contains('active')) {
+    if (scannerTab && scannerTab.classList.contains('active')) {
       setTimeout(() => startScanner(), 1000);
     }
   }, 5000);
@@ -1151,10 +1262,10 @@ async function confirmCheckin() {
       
       // Update UI
       updateStats();
-      if (currentUser.permissions.includes(CONSTANTS.PERMISSIONS.PARTICIPANTS)) {
+      if (currentUser && currentUser.permissions && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.PARTICIPANTS)) {
         updateParticipantsTable();
       }
-      if (currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
+      if (currentUser && currentUser.permissions && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
         updateCharts();
       }
       
@@ -1168,7 +1279,7 @@ async function confirmCheckin() {
       // Auto restart scanner setelah 2 detik
       setTimeout(() => {
         const scannerTab = document.getElementById('scannerTab');
-        if (scannerTab.classList.contains('active')) {
+        if (scannerTab && scannerTab.classList.contains('active')) {
           startScanner();
         }
       }, 2000);
@@ -1187,7 +1298,9 @@ async function confirmCheckin() {
 
 function cancelCheckin() {
   currentScannerData = null;
-  DOM.scanResult.classList.remove('active');
+  if (DOM.scanResult) {
+    DOM.scanResult.classList.remove('active');
+  }
 }
 
 function showManualCheckin() {
@@ -1403,7 +1516,9 @@ function updateAnalyticsSummary() {
   const avgAge = ages.length > 0 ? 
     Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
   
-  DOM.avgAge.textContent = avgAge + ' tahun';
+  if (DOM.avgAge) {
+    DOM.avgAge.textContent = avgAge + ' tahun';
+  }
   
   // Hitung domisili terbanyak
   const locationCounts = {};
@@ -1415,8 +1530,10 @@ function updateAnalyticsSummary() {
   const topLocation = Object.entries(locationCounts)
     .sort((a, b) => b[1] - a[1])[0];
   
-  DOM.topLocation.textContent = topLocation ? 
-    `${topLocation[0]} (${topLocation[1]} orang)` : '-';
+  if (DOM.topLocation) {
+    DOM.topLocation.textContent = topLocation ? 
+      `${topLocation[0]} (${topLocation[1]} orang)` : '-';
+  }
   
   // Check-in terakhir
   const checkins = participantsData
@@ -1427,7 +1544,9 @@ function updateAnalyticsSummary() {
   const lastCheckin = checkins.length > 0 ? 
     new Date(Math.max(...checkins)).toLocaleString('id-ID') : '-';
   
-  DOM.lastCheckin.textContent = lastCheckin;
+  if (DOM.lastCheckin) {
+    DOM.lastCheckin.textContent = lastCheckin;
+  }
   
   // Pendaftar hari ini
   const today = new Date().toLocaleDateString('id-ID');
@@ -1436,7 +1555,9 @@ function updateAnalyticsSummary() {
     return true;
   }).length;
   
-  DOM.todayReg.textContent = todayReg + ' orang';
+  if (DOM.todayReg) {
+    DOM.todayReg.textContent = todayReg + ' orang';
+  }
 }
 
 // ============================================
@@ -1452,7 +1573,7 @@ function setupTabs() {
       const tabId = tab.dataset.tab;
       
       // Cek apakah user memiliki permission untuk tab ini
-      if (!currentUser.permissions.includes(tabId)) {
+      if (!currentUser || !currentUser.permissions || !currentUser.permissions.includes(tabId)) {
         showNotification('Anda tidak memiliki akses ke fitur ini', CONSTANTS.NOTIFICATION_TYPES.ERROR);
         playSound('error');
         return;
@@ -1516,10 +1637,10 @@ async function manualCheckin(participantId) {
           
           // Update UI
           updateStats();
-          if (currentUser.permissions.includes(CONSTANTS.PERMISSIONS.PARTICIPANTS)) {
+          if (currentUser && currentUser.permissions && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.PARTICIPANTS)) {
             updateParticipantsTable();
           }
-          if (currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
+          if (currentUser && currentUser.permissions && currentUser.permissions.includes(CONSTANTS.PERMISSIONS.ANALYTICS)) {
             updateCharts();
           }
           
@@ -1541,7 +1662,7 @@ async function manualCheckin(participantId) {
 
 // View participant details (hanya untuk admin)
 function viewParticipant(participantId) {
-  if (currentUser.role !== CONSTANTS.ROLES.ADMIN) {
+  if (!currentUser || currentUser.role !== CONSTANTS.ROLES.ADMIN) {
     showNotification('Anda tidak memiliki akses untuk melihat detail ini', CONSTANTS.NOTIFICATION_TYPES.ERROR);
     playSound('error');
     return;
@@ -1555,7 +1676,7 @@ function viewParticipant(participantId) {
 
 // Export function (hanya untuk admin)
 function exportData() {
-  if (currentUser.role !== CONSTANTS.ROLES.ADMIN) {
+  if (!currentUser || currentUser.role !== CONSTANTS.ROLES.ADMIN) {
     showNotification('Hanya administrator yang dapat mengekspor data', CONSTANTS.NOTIFICATION_TYPES.ERROR);
     playSound('error');
     return;
@@ -1597,18 +1718,20 @@ function exportData() {
 
 // Settings functions (hanya untuk admin)
 function savePassword() {
-  if (currentUser.role !== CONSTANTS.ROLES.ADMIN) {
+  if (!currentUser || currentUser.role !== CONSTANTS.ROLES.ADMIN) {
     showNotification('Hanya administrator yang dapat mengubah password', CONSTANTS.NOTIFICATION_TYPES.ERROR);
     playSound('error');
     return;
   }
   
-  const newPassword = document.getElementById('newPassword').value;
+  const newPassword = document.getElementById('newPassword') ? document.getElementById('newPassword').value : '';
   if (newPassword) {
     // Simpan password (dalam implementasi nyata, ini akan dikirim ke server)
     showNotification('Password berhasil diperbarui', CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
     playSound('success');
-    document.getElementById('newPassword').value = '';
+    if (document.getElementById('newPassword')) {
+      document.getElementById('newPassword').value = '';
+    }
   } else {
     showNotification('Harap masukkan password baru', CONSTANTS.NOTIFICATION_TYPES.WARNING);
     playSound('warning');
@@ -1616,13 +1739,13 @@ function savePassword() {
 }
 
 function saveEmail() {
-  if (currentUser.role !== CONSTANTS.ROLES.ADMIN) {
+  if (!currentUser || currentUser.role !== CONSTANTS.ROLES.ADMIN) {
     showNotification('Hanya administrator yang dapat mengubah pengaturan email', CONSTANTS.NOTIFICATION_TYPES.ERROR);
     playSound('error');
     return;
   }
   
-  const email = document.getElementById('notificationEmail').value;
+  const email = document.getElementById('notificationEmail') ? document.getElementById('notificationEmail').value : '';
   if (email && email.includes('@')) {
     // Simpan email (dalam implementasi nyata, ini akan dikirim ke server)
     showNotification('Email notifikasi berhasil diperbarui', CONSTANTS.NOTIFICATION_TYPES.SUCCESS);
@@ -1694,17 +1817,21 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Setup event listeners untuk login
-  DOM.loginForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    handleLogin();
-  });
+  if (DOM.loginForm) {
+    DOM.loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      handleLogin(e);
+    });
+  }
   
   // Enter key untuk submit
-  DOM.passwordInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      handleLogin();
-    }
-  });
+  if (DOM.passwordInput) {
+    DOM.passwordInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        handleLogin(e);
+      }
+    });
+  }
   
   // Setup event delegation untuk table buttons
   document.addEventListener('click', function(e) {
